@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>University System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { 
+      padding-top: 20px;
+      background-color: #f5f5f5;
+      min-height: 100vh;
+    }
+    .container { 
+      max-width: 1200px; 
+    }
+    .navbar {
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 3px rgba(10,10,10,.1);
+    }
+    .footer {
+      margin-top: 40px;
+      padding: 20px 0;
+      background-color: #fafafa;
+      border-top: 1px solid #dbdbdb;
+    }
+    .table td, .table th {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+<section class="section">
+  <div class="container">
+    <!-- Шапка -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/">
+          <i class="fas fa-university mr-2"></i>
+          <strong>Университетская система</strong>
+        </a>
+      </div>
+
+      <div class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="/">
+            <i class="fas fa-users mr-2"></i>
+            Студенты
+          </a>
+          <a class="navbar-item" href="/courses">
+            <i class="fas fa-book mr-2"></i>
+            Курсы
+          </a>
+          <a class="navbar-item" href="/groups">
+            <i class="fas fa-user-graduate mr-2"></i>
+            Группы
+          </a>
+        </div>
+
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <div class="buttons">
+              <a href="/init-data" class="button is-info is-light">
+                <i class="fas fa-database mr-2"></i>
+                Тестовые данные
+              </a>
+              <a href="/health" class="button is-success is-light">
+                <i class="fas fa-heartbeat mr-2"></i>
+                Состояние системы
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Контент -->
+    {% block content %}{% endblock %}
+
+    <!-- Подвал -->
+    <footer class="footer">
+      <div class="content has-text-centered">
+        <p>
+          <strong>University System</strong> by Dmitry Dubnovitskiy
+        </p>
+        <p>
+          <small>Система управления университетом - студенты, курсы, оценки</small>
+        </p>
+      </div>
+    </footer>
+  </div>
+</section>
+
+<script>
+// Автоматическое закрытие уведомлений
+document.addEventListener('DOMContentLoaded', () => {
+  // Закрытие уведомлений
+  (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+    const $notification = $delete.parentNode;
+    $delete.addEventListener('click', () => {
+      $notification.parentNode.removeChild($notification);
+    });
+  });
+  
+  // Подсветка активной страницы в навигации
+  const currentPath = window.location.pathname;
+  document.querySelectorAll('.navbar-item').forEach(item => {
+    if (item.getAttribute('href') === currentPath) {
+      item.classList.add('is-active');
+    }
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="columns">
+  <div class="column is-one-third">
+    <!-- Форма добавления студента -->
+    <div class="box">
+      <h2 class="subtitle">Добавить студента</h2>
+      <form method="post" action="/students/add">
+        <div class="field">
+          <label class="label">Имя</label>
+          <div class="control">
+            <input class="input" name="first_name" placeholder="Иван" required/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Фамилия</label>
+          <div class="control">
+            <input class="input" name="last_name" placeholder="Иванов" required/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Email</label>
+          <div class="control">
+            <input class="input" name="email" type="email" placeholder="student@example.com"/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Группа</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="group_id">
+                <option value="">-- без группы --</option>
+                {% for group in groups %}
+                <option value="{{group.id}}">
+                  {{group.name}} {% if group.department %}({{group.department.name}}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-primary is-fullwidth" type="submit">Добавить студента</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Форма записи на курс -->
+    <div class="box">
+      <h2 class="subtitle">Записать на курс</h2>
+      <form method="post" action="/enroll">
+        <div class="field">
+          <label class="label">Студент</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="student_id" required>
+                <option value="">-- выберите студента --</option>
+                {% for s in students %}
+                <option value="{{s.id}}">
+                  {{s.first_name}} {{s.last_name}} {% if s.group %}({{s.group.name}}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Курс</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="course_id" required>
+                <option value="">-- выберите курс --</option>
+                {% for c in courses %}
+                <option value="{{c.id}}">
+                  {{c.subject.title}} — {{c.semester}} {% if c.group %}({{c.group.name}}){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-link is-fullwidth" type="submit">Записать на курс</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Форма добавления группы -->
+    <div class="box">
+      <h2 class="subtitle">Добавить группу</h2>
+      <form method="post" action="/groups/add">
+        <div class="field">
+          <label class="label">Название группы</label>
+          <div class="control">
+            <input class="input" name="name" placeholder="CS-101" required/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label">Год поступления</label>
+          <div class="control">
+            <input class="input" name="intake_year" type="number" min="2000" max="2030" value="2023" required/>
+          </div>
+        </div>
+        <div class="field">
+          <div class="control">
+            <button class="button is-success is-fullwidth" type="submit">Добавить группу</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="column">
+    <!-- Список студентов -->
+    <div class="box">
+      <h2 class="subtitle">Список студентов ({{students|length}})</h2>
+      {% if students %}
+      <table class="table is-fullwidth is-striped">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Имя</th>
+            <th>Email</th>
+            <th>Группа</th>
+            <th>Дата поступления</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td>{{s.id}}</td>
+            <td>{{s.first_name}} {{s.last_name}}</td>
+            <td>{{s.email or '-'}}</td>
+            <td>
+              {% if s.group %}
+                <span class="tag is-info">{{s.group.name}}</span>
+              {% else %}
+                <span class="tag is-light">Не назначена</span>
+              {% endif %}
+            </td>
+            <td>{{s.enroll_date.strftime('%Y-%m-%d') if s.enroll_date else '-'}}</td>
+            <td>
+              <a class="button is-small is-info" href="/transcript/{{s.id}}">Транскрипт</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="notification is-warning">
+        Нет студентов. Добавьте первого студента!
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Список групп -->
+    <div class="box mt-4">
+      <h2 class="subtitle">Список групп ({{groups|length}})</h2>
+      {% if groups %}
+      <div class="tags">
+        {% for group in groups %}
+        <span class="tag is-medium is-info">
+          {{group.name}} ({{group.intake_year}} год)
+          {% if group.department %}
+            <span class="tag is-light ml-1">{{group.department.name}}</span>
+          {% endif %}
+        </span>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="notification is-warning">
+        Нет групп. Добавьте первую группу!
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

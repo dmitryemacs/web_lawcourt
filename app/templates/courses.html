@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="box">
+  <h2 class="subtitle">Курсы</h2>
+  <table class="table is-fullwidth is-striped">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Предмет</th>
+        <th>Преподаватель</th>
+        <th>Группа</th>
+        <th>Семестр</th>
+        <th>Кредиты</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in courses %}
+      <tr>
+        <td>{{c.id}}</td>
+        <td>{{c.subject.title}} ({{c.subject.code}})</td>
+        <td>
+          {% if c.teacher %}
+            {{c.teacher.first_name}} {{c.teacher.last_name}}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>
+          {% if c.group %}
+            {{c.group.name}}
+          {% else %}
+            -
+          {% endif %}
+        </td>
+        <td>{{c.semester}}</td>
+        <td>{{c.credits}}</td>
+        <td>
+          <a class="button is-small is-info" href="/course/{{c.id}}">Детали</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="mt-4">
+    <a class="button is-light" href="/">На главную</a>
+  </div>
+</div>
+{% endblock %}

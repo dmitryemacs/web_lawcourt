@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="box">
+  <h2 class="subtitle">Курс: {{course.subject.title}}</h2>
+
+  <div class="content">
+    <p><strong>Код предмета:</strong> {{course.subject.code}}</p>
+    <p><strong>Описание:</strong> {{course.subject.description or 'Нет описания'}}</p>
+    <p><strong>Преподаватель:</strong>
+      {% if course.teacher %}
+        {{course.teacher.first_name}} {{course.teacher.last_name}}
+      {% else %}
+        -
+      {% endif %}
+    </p>
+    <p><strong>Группа:</strong>
+      {% if course.group %}
+        {{course.group.name}}
+      {% else %}
+        -
+      {% endif %}
+    </p>
+    <p><strong>Семестр:</strong> {{course.semester}}</p>
+    <p><strong>Кредиты:</strong> {{course.credits}}</p>
+  </div>
+
+  <h3 class="subtitle is-4">Экзамены</h3>
+  {% if exams %}
+  <table class="table is-fullwidth is-striped">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Дата</th>
+        <th>Максимальный балл</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ex in exams %}
+      <tr>
+        <td>{{ex.name}}</td>
+        <td>{{ex.date.strftime('%Y-%m-%d') if ex.date else 'Дата не установлена'}}</td>
+        <td>{{ex.max_score}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="notification is-warning">
+    Нет экзаменов для этого курса
+  </div>
+  {% endif %}
+
+  <div class="mt-4">
+    <a class="button is-light" href="/courses">Назад к курсам</a>
+    <a class="button is-info" href="/">На главную</a>
+  </div>
+</div>
+{% endblock %}
