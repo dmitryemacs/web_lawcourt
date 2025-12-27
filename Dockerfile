@@ -15,12 +15,15 @@ COPY requirements.txt .
 # Устанавливаем Python зависимости
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем весь код приложения
-COPY ./app /app
+# Копируем содержимое директории app в рабочую директорию
+COPY ./app/ /app/
 
 # Устанавливаем переменные окружения
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
+
+# Копируем статические файлы
+COPY ./static /app/static
 
 EXPOSE 8000
 
