@@ -1,182 +1,319 @@
 {% extends "base.html" %}
 {% block content %}
+<!-- Уведомления -->
+{% if messages %}
+<div class="columns">
+  <div class="column">
+    {% for message in messages %}
+    <div class="notification {{message.category}}">
+      <button class="delete"></button>
+      {{message.text}}
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
 <div class="columns">
   <div class="column is-one-third">
-    <!-- Форма добавления студента -->
-    <div class="box">
-      <h2 class="subtitle">Добавить студента</h2>
-      <form method="post" action="/students/add">
-        <div class="field">
-          <label class="label">Имя</label>
-          <div class="control">
-            <input class="input" name="first_name" placeholder="Иван" required/>
-          </div>
-        </div>
-        <div class="field">
-          <label class="label">Фамилия</label>
-          <div class="control">
-            <input class="input" name="last_name" placeholder="Иванов" required/>
-          </div>
-        </div>
-        <div class="field">
-          <label class="label">Email</label>
-          <div class="control">
-            <input class="input" name="email" type="email" placeholder="student@example.com"/>
-          </div>
-        </div>
-        <div class="field">
-          <label class="label">Группа</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select name="group_id">
-                <option value="">-- без группы --</option>
-                {% for group in groups %}
-                <option value="{{group.id}}">
-                  {{group.name}} {% if group.department %}({{group.department.name}}){% endif %}
-                </option>
-                {% endfor %}
-              </select>
+    <!-- Карточка добавления студента -->
+    <div class="box has-shadow">
+      <div class="content">
+        <h3 class="title is-4 has-text-primary">
+          <i class="fas fa-user-plus mr-2"></i>
+          Добавить студента
+        </h3>
+        <form method="post" action="/students/add">
+          <div class="field">
+            <label class="label">Имя</label>
+            <div class="control has-icons-left">
+              <input class="input" name="first_name" placeholder="Иван" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+              </span>
             </div>
           </div>
-        </div>
-        <div class="field">
-          <div class="control">
-            <button class="button is-primary is-fullwidth" type="submit">Добавить студента</button>
+          <div class="field">
+            <label class="label">Фамилия</label>
+            <div class="control has-icons-left">
+              <input class="input" name="last_name" placeholder="Иванов" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+              </span>
+            </div>
           </div>
-        </div>
-      </form>
+          <div class="field">
+            <label class="label">Email</label>
+            <div class="control has-icons-left">
+              <input class="input" name="email" type="email" placeholder="student@example.com"/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-envelope"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Группа</label>
+            <div class="control">
+              <div class="select is-fullwidth is-primary">
+                <select name="group_id">
+                  <option value="">-- без группы --</option>
+                  {% for group in groups %}
+                  <option value="{{group.id}}">
+                    {{group.name}} {% if group.department %}({{group.department.name}}){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-primary is-fullwidth is-medium" type="submit">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить студента
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
 
-    <!-- Форма записи на курс -->
-    <div class="box">
-      <h2 class="subtitle">Записать на курс</h2>
-      <form method="post" action="/enroll">
-        <div class="field">
-          <label class="label">Студент</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select name="student_id" required>
-                <option value="">-- выберите студента --</option>
-                {% for s in students %}
-                <option value="{{s.id}}">
-                  {{s.first_name}} {{s.last_name}} {% if s.group %}({{s.group.name}}){% endif %}
-                </option>
-                {% endfor %}
-              </select>
+    <!-- Карточка записи на курс -->
+    <div class="box has-shadow mt-4">
+      <div class="content">
+        <h3 class="title is-4 has-text-link">
+          <i class="fas fa-book-reader mr-2"></i>
+          Записать на курс
+        </h3>
+        <form method="post" action="/enroll">
+          <div class="field">
+            <label class="label">Студент</label>
+            <div class="control">
+              <div class="select is-fullwidth is-link">
+                <select name="student_id" required>
+                  <option value="">-- выберите студента --</option>
+                  {% for s in students %}
+                  <option value="{{s.id}}">
+                    {{s.first_name}} {{s.last_name}} {% if s.group %}({{s.group.name}}){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="field">
-          <label class="label">Курс</label>
-          <div class="control">
-            <div class="select is-fullwidth">
-              <select name="course_id" required>
-                <option value="">-- выберите курс --</option>
-                {% for c in courses %}
-                <option value="{{c.id}}">
-                  {{c.subject.title}} — {{c.semester}} {% if c.group %}({{c.group.name}}){% endif %}
-                </option>
-                {% endfor %}
-              </select>
+          <div class="field">
+            <label class="label">Курс</label>
+            <div class="control">
+              <div class="select is-fullwidth is-link">
+                <select name="course_id" required>
+                  <option value="">-- выберите курс --</option>
+                  {% for c in courses %}
+                  <option value="{{c.id}}">
+                    {{c.subject.title}} — {{c.semester}} {% if c.group %}({{c.group.name}}){% endif %}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="field">
-          <div class="control">
-            <button class="button is-link is-fullwidth" type="submit">Записать на курс</button>
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-link is-fullwidth is-medium" type="submit">
+                <i class="fas fa-check mr-2"></i>
+                Записать на курс
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
 
-    <!-- Форма добавления группы -->
-    <div class="box">
-      <h2 class="subtitle">Добавить группу</h2>
-      <form method="post" action="/groups/add">
-        <div class="field">
-          <label class="label">Название группы</label>
-          <div class="control">
-            <input class="input" name="name" placeholder="CS-101" required/>
+    <!-- Карточка добавления группы -->
+    <div class="box has-shadow mt-4">
+      <div class="content">
+        <h3 class="title is-4 has-text-success">
+          <i class="fas fa-users mr-2"></i>
+          Добавить группу
+        </h3>
+        <form method="post" action="/groups/add">
+          <div class="field">
+            <label class="label">Название группы</label>
+            <div class="control has-icons-left">
+              <input class="input" name="name" placeholder="CS-101" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-tag"></i>
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <label class="label">Год поступления</label>
-          <div class="control">
-            <input class="input" name="intake_year" type="number" min="2000" max="2030" value="2023" required/>
+          <div class="field">
+            <label class="label">Год поступления</label>
+            <div class="control has-icons-left">
+              <input class="input" name="intake_year" type="number" min="2000" max="2030" value="2023" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-calendar"></i>
+              </span>
+            </div>
           </div>
-        </div>
-        <div class="field">
-          <div class="control">
-            <button class="button is-success is-fullwidth" type="submit">Добавить группу</button>
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-success is-fullwidth is-medium" type="submit">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить группу
+              </button>
+            </div>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 
   <div class="column">
-    <!-- Список студентов -->
-    <div class="box">
-      <h2 class="subtitle">Список студентов ({{students|length}})</h2>
-      {% if students %}
-      <table class="table is-fullwidth is-striped">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Имя</th>
-            <th>Email</th>
-            <th>Группа</th>
-            <th>Дата поступления</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in students %}
-          <tr>
-            <td>{{s.id}}</td>
-            <td>{{s.first_name}} {{s.last_name}}</td>
-            <td>{{s.email or '-'}}</td>
-            <td>
-              {% if s.group %}
-                <span class="tag is-info">{{s.group.name}}</span>
-              {% else %}
-                <span class="tag is-light">Не назначена</span>
-              {% endif %}
-            </td>
-            <td>{{s.enroll_date.strftime('%Y-%m-%d') if s.enroll_date else '-'}}</td>
-            <td>
-              <a class="button is-small is-info" href="/transcript/{{s.id}}">Транскрипт</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      {% else %}
-      <div class="notification is-warning">
-        Нет студентов. Добавьте первого студента!
+    <!-- Карточка списка студентов -->
+    <div class="box has-shadow">
+      <div class="content">
+        <div class="level">
+          <div class="level-left">
+            <h3 class="title is-4">
+              <i class="fas fa-users mr-2"></i>
+              Список студентов
+            </h3>
+          </div>
+          <div class="level-right">
+            <div class="tags has-addons">
+              <span class="tag is-info is-medium">
+                <i class="fas fa-users mr-1"></i>
+                Всего
+              </span>
+              <span class="tag is-primary is-medium">
+                {{students|length}}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {% if students %}
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Студент</th>
+                <th>Email</th>
+                <th>Группа</th>
+                <th>Дата поступления</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for s in students %}
+              <tr>
+                <td><strong>{{s.id}}</strong></td>
+                <td>
+                  <span class="icon-text">
+                    <span class="icon">
+                      <i class="fas fa-user-graduate has-text-primary"></i>
+                    </span>
+                    <span>{{s.first_name}} {{s.last_name}}</span>
+                  </span>
+                </td>
+                <td>
+                  {% if s.email %}
+                    <span class="icon-text">
+                      <span class="icon">
+                        <i class="fas fa-envelope has-text-link"></i>
+                      </span>
+                      <span>{{s.email}}</span>
+                    </span>
+                  {% else %}
+                    <span class="tag is-light">Нет email</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.group %}
+                    <span class="tag is-info is-light">
+                      <i class="fas fa-users mr-1"></i>
+                      {{s.group.name}}
+                    </span>
+                  {% else %}
+                    <span class="tag is-light">Не назначена</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if s.enroll_date %}
+                    <span class="icon-text">
+                      <span class="icon">
+                        <i class="fas fa-calendar-alt has-text-success"></i>
+                      </span>
+                      <span>{{s.enroll_date.strftime('%d.%m.%Y')}}</span>
+                    </span>
+                  {% else %}
+                    <span class="tag is-light">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <a class="button is-small is-info is-light" href="/transcript/{{s.id}}">
+                    <span class="icon">
+                      <i class="fas fa-file-alt"></i>
+                    </span>
+                    <span>Транскрипт</span>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="notification is-warning is-light">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Нет студентов. Добавьте первого студента!
+        </div>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
 
-    <!-- Список групп -->
-    <div class="box mt-4">
-      <h2 class="subtitle">Список групп ({{groups|length}})</h2>
-      {% if groups %}
-      <div class="tags">
-        {% for group in groups %}
-        <span class="tag is-medium is-info">
-          {{group.name}} ({{group.intake_year}} год)
-          {% if group.department %}
-            <span class="tag is-light ml-1">{{group.department.name}}</span>
-          {% endif %}
-        </span>
-        {% endfor %}
+    <!-- Карточка списка групп -->
+    <div class="box has-shadow mt-4">
+      <div class="content">
+        <div class="level">
+          <div class="level-left">
+            <h3 class="title is-4">
+              <i class="fas fa-object-group mr-2"></i>
+              Список групп
+            </h3>
+          </div>
+          <div class="level-right">
+            <div class="tags has-addons">
+              <span class="tag is-info is-medium">
+                <i class="fas fa-users mr-1"></i>
+                Всего
+              </span>
+              <span class="tag is-primary is-medium">
+                {{groups|length}}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {% if groups %}
+        <div class="tags">
+          {% for group in groups %}
+          <span class="tag is-medium is-info is-light">
+            <i class="fas fa-users mr-1"></i>
+            {{group.name}} ({{group.intake_year}} год)
+            {% if group.department %}
+              <span class="tag is-light ml-1">{{group.department.name}}</span>
+            {% endif %}
+          </span>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="notification is-warning is-light">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Нет групп. Добавьте первую группу!
+        </div>
+        {% endif %}
       </div>
-      {% else %}
-      <div class="notification is-warning">
-        Нет групп. Добавьте первую группу!
-      </div>
-      {% endif %}
     </div>
   </div>
 </div>
