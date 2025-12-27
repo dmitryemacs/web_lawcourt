@@ -1,7 +1,215 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="box">
-  <h2 class="subtitle">Курсы</h2>
+<!-- Подключаем Flatpickr для календарей -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Инициализация календарей
+    flatpickr.localize(flatpickr.l10n.ru.ru);
+
+    // Календарь для даты поступления в форме добавления студента (если будет)
+    const dateInputs = document.querySelectorAll('input[type="date"]');
+    dateInputs.forEach(input => {
+        flatpickr(input, {
+            dateFormat: "Y-m-d",
+            locale: "ru",
+            allowInput: true
+        });
+    });
+});
+</script>
+<div class="columns">
+  <div class="column is-one-third">
+    <!-- Форма добавления курса -->
+    <div class="box has-shadow">
+      <div class="content">
+        <h3 class="title is-4 has-text-primary">
+          <i class="fas fa-plus mr-2"></i>
+          Добавить курс
+        </h3>
+        <form method="post" action="/courses/add">
+          <div class="field">
+            <label class="label">Предмет</label>
+            <div class="control">
+              <div class="select is-fullwidth is-primary">
+                <select name="subject_id" required>
+                  <option value="">-- выберите предмет --</option>
+                  {% for subject in subjects %}
+                  <option value="{{subject.id}}">
+                    {{subject.code}} - {{subject.title}}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Преподаватель</label>
+            <div class="control">
+              <div class="select is-fullwidth is-primary">
+                <select name="teacher_id">
+                  <option value="">-- без преподавателя --</option>
+                  {% for teacher in teachers %}
+                  <option value="{{teacher.id}}">
+                    {{teacher.first_name}} {{teacher.last_name}}
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Группа</label>
+            <div class="control">
+              <div class="select is-fullwidth is-primary">
+                <select name="group_id">
+                  <option value="">-- без группы --</option>
+                  {% for group in groups %}
+                  <option value="{{group.id}}">
+                    {{group.name}} ({{group.intake_year}})
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Семестр</label>
+            <div class="control has-icons-left">
+              <input class="input" name="semester" placeholder="Осень 2024" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-calendar"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Кредиты</label>
+            <div class="control has-icons-left">
+              <input class="input" name="credits" type="number" min="1" max="10" value="3" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-graduation-cap"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-primary is-fullwidth is-medium" type="submit">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить курс
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Форма добавления преподавателя -->
+  <div class="column is-one-third">
+    <div class="box has-shadow mt-4">
+      <div class="content">
+        <h3 class="title is-4 has-text-success">
+          <i class="fas fa-chalkboard-teacher mr-2"></i>
+          Добавить преподавателя
+        </h3>
+        <form method="post" action="/teachers/add">
+          <div class="field">
+            <label class="label">Имя</label>
+            <div class="control has-icons-left">
+              <input class="input" name="first_name" placeholder="Иван" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Фамилия</label>
+            <div class="control has-icons-left">
+              <input class="input" name="last_name" placeholder="Петров" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-user"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Email</label>
+            <div class="control has-icons-left">
+              <input class="input" name="email" type="email" placeholder="teacher@example.com"/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-envelope"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-success is-fullwidth is-medium" type="submit">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить преподавателя
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Вторая строка с формой добавления предмета -->
+<div class="columns mt-4">
+  <div class="column is-one-third">
+    <div class="box has-shadow">
+      <div class="content">
+        <h3 class="title is-4 has-text-warning">
+          <i class="fas fa-book mr-2"></i>
+          Добавить предмет
+        </h3>
+        <form method="post" action="/subjects/add">
+          <div class="field">
+            <label class="label">Код предмета</label>
+            <div class="control has-icons-left">
+              <input class="input" name="code" placeholder="CS101" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-hashtag"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Название</label>
+            <div class="control has-icons-left">
+              <input class="input" name="title" placeholder="Введение в программирование" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-heading"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">Описание</label>
+            <div class="control">
+              <textarea class="textarea" name="description" placeholder="Краткое описание предмета..."></textarea>
+            </div>
+          </div>
+          <div class="field mt-4">
+            <div class="control">
+              <button class="button is-warning is-fullwidth is-medium" type="submit">
+                <i class="fas fa-plus mr-2"></i>
+                Добавить предмет
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="column">
   <table class="table is-fullwidth is-striped">
     <thead>
       <tr>
@@ -45,6 +253,7 @@
 
   <div class="mt-4">
     <a class="button is-light" href="/">На главную</a>
+  </div>
   </div>
 </div>
 {% endblock %}

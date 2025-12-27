@@ -7,9 +7,33 @@ from sqlalchemy import text, select
 import time
 import os
 import uvicorn
+from datetime import datetime, timedelta
+from typing import List, Dict, Any
 
 from database import get_db, engine
 from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department
+
+# Система уведомлений
+class Message:
+    def __init__(self, text: str, category: str = "is-info"):
+        self.text = text
+        self.category = category
+
+def get_messages(request: Request) -> List[Message]:
+    """Получить уведомления из сессии"""
+    if not hasattr(request.state, 'messages'):
+        request.state.messages = []
+    return request.state.messages
+
+def add_message(request: Request, text: str, category: str = "is-info"):
+    """Добавить уведомление"""
+    messages = get_messages(request)
+    messages.append(Message(text, category))
+
+def clear_messages(request: Request):
+    """Очистить уведомления"""
+    if hasattr(request.state, 'messages'):
+        request.state.messages = []
 
 app = FastAPI(title="University App")
 
@@ -53,10 +77,12 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 def home(request: Request, db: Session = Depends(get_db)):
     students = db.execute(select(Student)).scalars().all()
     courses = db.execute(select(Course)).scalars().all()
+    groups = db.execute(select(Group)).scalars().all()
     return templates.TemplateResponse("students.html", {
         "request": request,
         "students": students,
-        "courses": courses
+        "courses": courses,
+        "groups": groups
     })
 
 @app.post("/students/add")
@@ -206,9 +232,17 @@ def courses_view(request: Request, db: Session = Depends(get_db)):
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
+    # Get additional data for the form
+    subjects = db.execute(select(Subject)).scalars().all()
+    teachers = db.execute(select(Teacher)).scalars().all()
+    groups = db.execute(select(Group)).scalars().all()
+
     return templates.TemplateResponse("courses.html", {
         "request": request,
-        "courses": courses
+        "courses": courses,
+        "subjects": subjects,
+        "teachers": teachers,
+        "groups": groups
     })
 
 @app.get("/course/{course_id}", response_class=HTMLResponse)
@@ -276,61 +310,258 @@ def add_group(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при добавлении группы: {str(e)}")
 
+@app.post("/courses/add")
+def add_course(
+    request: Request,
+    subject_id: int = Form(...),
+    semester: str = Form(...),
+    credits: int = Form(...),
+    teacher_id: int = Form(None),
+    group_id: int = Form(None),
+    db: Session = Depends(get_db)
+):
+    course = Course(
+        subject_id=subject_id,
+        teacher_id=teacher_id if teacher_id else None,
+        group_id=group_id if group_id else None,
+        semester=semester,
+        credits=credits
+    )
+
+    try:
+        db.add(course)
+        db.commit()
+        return RedirectResponse(url='/courses', status_code=303)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении курса: {str(e)}")
+
+@app.post("/teachers/add")
+def add_teacher(
+    request: Request,
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    email: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    teacher = Teacher(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        department_id=None  # Can be added later if needed
+    )
+
+    try:
+        db.add(teacher)
+        db.commit()
+        return RedirectResponse(url='/courses', status_code=303)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении преподавателя: {str(e)}")
+
+@app.post("/subjects/add")
+def add_subject(
+    request: Request,
+    code: str = Form(...),
+    title: str = Form(...),
+    description: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    subject = Subject(
+        code=code,
+        title=title,
+        description=description
+    )
+
+    try:
+        db.add(subject)
+        db.commit()
+        return RedirectResponse(url='/courses', status_code=303)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении предмета: {str(e)}")
+
 @app.get("/init-data")
 def init_sample_data(db: Session = Depends(get_db)):
     """Инициализация тестовых данных"""
     try:
+        # Проверяем, есть ли уже данные
+        existing_dept = db.execute(select(Department).limit(1)).scalar_one_or_none()
+        if existing_dept:
+            return {"message": "Sample data already exists"}
+
         # Создаем кафедру
         dept = Department(name="Факультет компьютерных наук")
         db.add(dept)
         db.flush()
 
-        # Создаем преподавателя
-        teacher = Teacher(
+        # Создаем преподавателей
+        teacher1 = Teacher(
             first_name="Иван",
             last_name="Петров",
             department_id=dept.id,
             email="ivan.petrov@university.ru"
         )
-        db.add(teacher)
+        teacher2 = Teacher(
+            first_name="Мария",
+            last_name="Сидорова",
+            department_id=dept.id,
+            email="maria.sidorova@university.ru"
+        )
+        db.add_all([teacher1, teacher2])
         db.flush()
 
-        # Создаем группу
-        group = Group(
+        # Создаем группы
+        group1 = Group(
             name="CS-101",
             department_id=dept.id,
             intake_year=2023
         )
-        db.add(group)
+        group2 = Group(
+            name="CS-102",
+            department_id=dept.id,
+            intake_year=2022
+        )
+        db.add_all([group1, group2])
         db.flush()
 
-        # Создаем предмет
-        subject = Subject(
-            code="CS101",
-            title="Введение в программирование",
-            description="Базовый курс программирования"
-        )
-        db.add(subject)
+        # Создаем предметы
+        subjects = [
+            Subject(
+                code="CS101",
+                title="Введение в программирование",
+                description="Базовый курс программирования на Python"
+            ),
+            Subject(
+                code="CS102",
+                title="Алгоритмы и структуры данных",
+                description="Изучение алгоритмов и структур данных"
+            ),
+            Subject(
+                code="MATH101",
+                title="Дискретная математика",
+                description="Основы дискретной математики"
+            )
+        ]
+        db.add_all(subjects)
         db.flush()
 
-        # Создаем курс
-        course = Course(
-            subject_id=subject.id,
-            teacher_id=teacher.id,
-            group_id=group.id,
-            semester="Осень 2023",
-            credits=3
-        )
-        db.add(course)
+        # Создаем курсы
+        courses = [
+            Course(
+                subject_id=subjects[0].id,
+                teacher_id=teacher1.id,
+                group_id=group1.id,
+                semester="Осень 2023",
+                credits=3
+            ),
+            Course(
+                subject_id=subjects[1].id,
+                teacher_id=teacher2.id,
+                group_id=group1.id,
+                semester="Весна 2024",
+                credits=4
+            ),
+            Course(
+                subject_id=subjects[2].id,
+                teacher_id=teacher1.id,
+                group_id=group2.id,
+                semester="Осень 2023",
+                credits=3
+            )
+        ]
+        db.add_all(courses)
         db.flush()
 
-        # Создаем экзамен
-        exam = Exam(
-            course_id=course.id,
-            name="Финальный экзамен",
-            max_score=100
-        )
-        db.add(exam)
+        # Создаем студентов
+        students = [
+            Student(
+                first_name="Алексей",
+                last_name="Иванов",
+                email="alexey.ivanov@university.ru",
+                group_id=group1.id,
+                enroll_date=datetime.now() - timedelta(days=365)
+            ),
+            Student(
+                first_name="Екатерина",
+                last_name="Смирнова",
+                email="ekaterina.smirnova@university.ru",
+                group_id=group1.id,
+                enroll_date=datetime.now() - timedelta(days=360)
+            ),
+            Student(
+                first_name="Дмитрий",
+                last_name="Кузнецов",
+                email="dmitry.kuznetsov@university.ru",
+                group_id=group1.id,
+                enroll_date=datetime.now() - timedelta(days=355)
+            ),
+            Student(
+                first_name="Ольга",
+                last_name="Попова",
+                email="olga.popova@university.ru",
+                group_id=group2.id,
+                enroll_date=datetime.now() - timedelta(days=730)
+            ),
+            Student(
+                first_name="Сергей",
+                last_name="Васильев",
+                email="sergey.vasiliev@university.ru",
+                group_id=group2.id,
+                enroll_date=datetime.now() - timedelta(days=725)
+            )
+        ]
+        db.add_all(students)
+        db.flush()
+
+        # Создаем экзамены
+        exams = [
+            Exam(
+                course_id=courses[0].id,
+                name="Финальный экзамен",
+                max_score=100,
+                date=datetime.now() - timedelta(days=30)
+            ),
+            Exam(
+                course_id=courses[1].id,
+                name="Среднесрочный экзамен",
+                max_score=50,
+                date=datetime.now() - timedelta(days=15)
+            ),
+            Exam(
+                course_id=courses[2].id,
+                name="Итоговый тест",
+                max_score=75,
+                date=datetime.now() - timedelta(days=45)
+            )
+        ]
+        db.add_all(exams)
+        db.flush()
+
+        # Создаем записи на курсы
+        enrollments = [
+            Enrollment(student_id=students[0].id, course_id=courses[0].id),
+            Enrollment(student_id=students[0].id, course_id=courses[1].id),
+            Enrollment(student_id=students[1].id, course_id=courses[0].id),
+            Enrollment(student_id=students[1].id, course_id=courses[1].id),
+            Enrollment(student_id=students[2].id, course_id=courses[0].id),
+            Enrollment(student_id=students[3].id, course_id=courses[2].id),
+            Enrollment(student_id=students[4].id, course_id=courses[2].id)
+        ]
+        db.add_all(enrollments)
+        db.flush()
+
+        # Создаем оценки
+        grades = [
+            Grade(exam_id=exams[0].id, student_id=students[0].id, score=88),
+            Grade(exam_id=exams[0].id, student_id=students[1].id, score=92),
+            Grade(exam_id=exams[0].id, student_id=students[2].id, score=76),
+            Grade(exam_id=exams[1].id, student_id=students[0].id, score=45),
+            Grade(exam_id=exams[1].id, student_id=students[1].id, score=48),
+            Grade(exam_id=exams[2].id, student_id=students[3].id, score=68),
+            Grade(exam_id=exams[2].id, student_id=students[4].id, score=72)
+        ]
+        db.add_all(grades)
 
         db.commit()
         return {"message": "Sample data created successfully"}
