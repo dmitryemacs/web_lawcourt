@@ -1,13 +1,16 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bullseye
+
+ENV DEBIAN_FRONTEND=noninteractive
+# Установим минимально необходимое, уберём кэш apt после установки
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      gcc \
+      libpq-dev \
+      ca-certificates \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Устанавливаем системные зависимости
-RUN apt-get update && apt-get install -y \
-    gcc \
-    libpq-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 # Копируем зависимости
 COPY requirements.txt .
