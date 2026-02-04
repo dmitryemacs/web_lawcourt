@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Результаты теста: {{ result.test.name }}</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {{ message.category }}">
+                {{ message.text }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="box">
+        <h2 class="subtitle">Информация о тесте</h2>
+        <div class="content">
+            <p><strong>Курс:</strong> {{ result.test.course.subject.title }}</p>
+            <p><strong>Предмет:</strong> {{ result.test.course.subject.code }}</p>
+            <p><strong>Максимальный балл:</strong> {{ result.test.max_score }}</p>
+            <p><strong>Лимит времени:</strong> {% if result.test.time_limit %}{{ result.test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
+            <p><strong>Проходной балл:</strong> {{ (result.test.max_score * 0.6)|round }} из {{ result.test.max_score }}</p>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Результаты</h2>
+        <div class="content">
+            <p><strong>Набрано баллов:</strong> {{ result.score }} из {{ result.max_score }}</p>
+            <p><strong>Процент выполнения:</strong> {{ "%.1f"|format((result.score / result.max_score) * 100) }}%</p>
+            <p><strong>Статус:</strong> 
+                {% if result.passed %}
+                    <span class="tag is-success">Сдан</span>
+                {% else %}
+                    <span class="tag is-danger">Не сдан</span>
+                {% endif %}
+            </p>
+            <p><strong>Дата прохождения:</strong> {{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}</p>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Ответы на вопросы</h2>
+        {% if answers %}
+            <div class="table-container">
+                <table class="table is-striped">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Вопрос</th>
+                            <th>Ваш ответ</th>
+                            <th>Баллы</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for answer in answers %}
+                        <tr>
+                            <td>{{ answer.question.order }}</td>
+                            <td>{{ answer.question.text }}</td>
+                            <td>
+                                {% if answer.question.type == 'text' %}
+                                    {{ answer.answer_text }}
+                                {% elif answer.question.type == 'single_choice' %}
+                                    {% if answer.question.options %}
+                                        {% set options = answer.question.options.split('\n') %}
+                                        {% if answer.answer_text is number %}
+                                            {{ options[answer.answer_text] }}
+                                        {% else %}
+                                            {{ answer.answer_text }}
+                                        {% endif %}
+                                    {% endif %}
+                                {% elif answer.question.type == 'multiple_choice' %}
+                                    {% if answer.question.options %}
+                                        {% set options = answer.question.options.split('\n') %}
+                                        {% if answer.answer_text %}
+                                            {% set selected = answer.answer_text.split(',') %}
+                                            {% for idx in selected %}
+                                                {{ options[idx] }}<br>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>{{ answer.points_earned }} из {{ answer.question.points }}</td>
+                            <td>
+                                {% if answer.is_correct %}
+                                    <span class="tag is-success">Правильно</span>
+                                {% else %}
+                                    <span class="tag is-danger">Неправильно</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="has-text-grey">Ответы не найдены</p>
+        {% endif %}
+    </div>
+
+    <div class="field is-grouped">
+        <p class="control">
+            <a href="/courses/{{ result.test.course_id }}/tests" class="button is-light">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Назад к тестам курса</span>
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock %}

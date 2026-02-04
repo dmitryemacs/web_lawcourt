@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Прохождение теста: {{ test.name }}</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {{ message.category }}">
+                {{ message.text }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="box">
+        <h2 class="subtitle">Информация о тесте</h2>
+        <div class="content">
+            <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
+            <p><strong>Предмет:</strong> {{ test.course.subject.code }}</p>
+            <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
+            <p><strong>Лимит времени:</strong> {% if test.time_limit %}{{ test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
+            <p><strong>Всего вопросов:</strong> {{ questions|length }}</p>
+            <p><strong>Проходной балл:</strong> {{ (test.max_score * 0.6)|round }} из {{ test.max_score }}</p>
+        </div>
+    </div>
+
+    <form method="post" action="/submit-test/{{ test.id }}">
+        {% for question in questions %}
+            <div class="box">
+                <h3 class="subtitle">{{ question.order }}. {{ question.text }}</h3>
+                <input type="hidden" name="question_{{ question.id }}" value="">
+
+                {% if question.type == 'text' %}
+                    <div class="field">
+                        <div class="control">
+                            <textarea class="textarea" name="question_{{ question.id }}" rows="3" required></textarea>
+                        </div>
+                    </div>
+                {% elif question.type == 'single_choice' %}
+                    {% if question.options %}
+                        {% set options = question.options.split('\n') %}
+                        {% for idx, option in options|enumerate %}
+                            <div class="field">
+                                <div class="control">
+                                    <label class="radio">
+                                        <input type="radio" name="question_{{ question.id }}" value="{{ idx }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% elif question.type == 'multiple_choice' %}
+                    {% if question.options %}
+                        {% set options = question.options.split('\n') %}
+                        {% for idx, option in options|enumerate %}
+                            <div class="field">
+                                <div class="control">
+                                    <label class="checkbox">
+                                        <input type="checkbox" name="question_{{ question.id }}" value="{{ idx }}">
+                                        {{ option }}
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <div class="field is-grouped">
+            <div class="control">
+                <button type="submit" class="button is-primary">Завершить тест</button>
+            </div>
+            <div class="control">
+                <a href="/" class="button is-light">Отмена</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

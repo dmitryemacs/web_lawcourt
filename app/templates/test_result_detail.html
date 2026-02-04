@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="columns">
+        <div class="column is-8 is-offset-2">
+            <div class="card">
+                <div class="card-content">
+                    <div class="media">
+                        <div class="media-content">
+                            <p class="title is-4">Результаты теста: {{ test.name }}</p>
+                            <p class="subtitle is-6">Студент: {{ student.first_name }} {{ student.last_name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="content">
+                        <div class="box">
+                            <div class="level">
+                                <div class="level-left">
+                                    <div>
+                                        <p class="title is-4">{{ result.score }} / {{ result.max_score }}</p>
+                                        <p class="subtitle">Баллы</p>
+                                    </div>
+                                </div>
+                                <div class="level-right">
+                                    {% if result.passed %}
+                                        <span class="tag is-success is-large">Зачтено</span>
+                                    {% else %}
+                                        <span class="tag is-danger is-large">Не зачтено</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="content">
+                            <h5 class="subtitle">Ответы на вопросы:</h5>
+                            {% for answer in answers %}
+                            <div class="box {% if answer.is_correct %}has-background-success-light{% else %}has-background-danger-light{% endif %}">
+                                <div class="level">
+                                    <div class="level-left">
+                                        <div>
+                                            <p class="title is-5">{{ loop.index }}. {{ answer.question.text }}</p>
+                                            <p class="subtitle is-6">
+                                                {% if answer.question.type == 'text' %}
+                                                    Ваш ответ: "{{ answer.answer_text }}"
+                                                {% elif answer.question.type == 'single_choice' %}
+                                                    Выбран: "{{ answer.answer_text }}"
+                                                {% elif answer.question.type == 'multiple_choice' %}
+                                                    Выбрано: "{{ answer.answer_text }}"
+                                                {% endif %}
+                                            </p>
+                                            <p class="subtitle is-6">
+                                                {% if answer.is_correct %}
+                                                    <span class="tag is-success">Правильно</span>
+                                                {% else %}
+                                                    <span class="tag is-danger">Неправильно</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="level-right">
+                                        <div class="has-text-right">
+                                            <p class="title is-5">{{ answer.points_earned }} / {{ answer.question.points }}</p>
+                                            <p class="subtitle">Баллы</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="content">
+                            <h5 class="subtitle">Информация о тесте:</h5>
+                            <div class="box">
+                                <div class="content">
+                                    <p><strong>Название:</strong> {{ test.name }}</p>
+                                    <p><strong>Описание:</strong> {{ test.description }}</p>
+                                    <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
+                                    <p><strong>Время на выполнение:</strong> {% if test.time_limit %}{{ test.time_limit }} минут{% else %}Без ограничения{% endif %}</p>
+                                    <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
+                                    <p><strong>Преподаватель:</strong> {% if test.course.teacher %}{{ test.course.teacher.first_name }} {{ test.course.teacher.last_name }}{% else %}Не назначен{% endif %}</p>
+                                    <p><strong>Дата прохождения:</strong> {{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
