@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Редактирование теста: {{ test.name }}</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {{ message.category }}">
+                {{ message.text }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="field is-grouped">
+        <p class="control">
+            <a href="/tests/{{ test.id }}" class="button is-info">
+                <span class="icon">
+                    <i class="fas fa-eye"></i>
+                </span>
+                <span>Просмотр теста</span>
+            </a>
+        </p>
+        <p class="control">
+            <a href="/tests" class="button is-light">
+                <span class="icon">
+                    <i class="fas fa-arrow-left"></i>
+                </span>
+                <span>Назад к списку</span>
+            </a>
+        </p>
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Информация о тесте</h2>
+        <div class="content">
+            <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
+            <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
+            <p><strong>Лимит времени:</strong> {% if test.time_limit %}{{ test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
+            <p><strong>Описание:</strong> {% if test.description %}{{ test.description }}{% else %}<em>Без описания</em>{% endif %}</p>
+        </div>
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Вопросы теста ({{ questions|length }})</h2>
+        {% if questions %}
+            <div class="table-container">
+                <table class="table is-striped">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Тип</th>
+                            <th>Вопрос</th>
+                            <th>Баллы</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for question in questions %}
+                        <tr>
+                            <td>{{ question.order }}</td>
+                            <td>
+                                {% if question.type == 'text' %}
+                                    <span class="tag is-info">Текст</span>
+                                {% elif question.type == 'single_choice' %}
+                                    <span class="tag is-primary">Один вариант</span>
+                                {% elif question.type == 'multiple_choice' %}
+                                    <span class="tag is-success">Несколько вариантов</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ question.text }}</td>
+                            <td>{{ question.points }}</td>
+                            <td>
+                                <div class="buttons are-small">
+                                    <button class="button is-warning" onclick="editQuestion({{ question.id }})">Редактировать</button>
+                                    <button class="button is-danger" onclick="deleteQuestion({{ question.id }})">Удалить</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="has-text-grey">Вопросы еще не добавлены</p>
+        {% endif %}
+    </div>
+
+    <div class="box">
+        <h2 class="subtitle">Добавить вопрос</h2>
+        <form method="post" action="/tests/{{ test.id }}/questions/add">
+            <div class="field">
+                <label class="label">Текст вопроса</label>
+                <div class="control">
+                    <textarea class="textarea" name="text" required></textarea>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Тип вопроса</label>
+                <div class="control">
+                    <div class="select">
+                        <select name="question_type" required onchange="updateOptions(this.value)">
+                            <option value="text">Открытый вопрос (текст)</option>
+                            <option value="single_choice">Один вариант из списка</option>
+                            <option value="multiple_choice">Несколько вариантов из списка</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="options-container" style="display: none;">
+                <div class="field">
+                    <label class="label">Варианты ответов (каждый вариант с новой строки)</label>
+                    <div class="control">
+                        <textarea class="textarea" name="options" placeholder="Вариант 1&#10;Вариант 2&#10;Вариант 3"></textarea>
+                    </div>
+                    <p class="help">Для правильных ответов укажите их номера через запятую в поле "Правильный ответ"</p>
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Правильный ответ</label>
+                <div class="control">
+                    <input class="input" type="text" name="correct_answer" required placeholder="Для текста - правильный ответ, для выбора - номера вариантов">
+                </div>
+            </div>
+
+            <div class="field">
+                <label class="label">Баллы за вопрос</label>
+                <div class="control">
+                    <input class="input" type="number" name="points" value="1" min="1" max="100">
+                </div>
+            </div>
+
+            <div class="field is-grouped">
+                <div class="control">
+                    <button type="submit" class="button is-primary">Добавить вопрос</button>
+                </div>
+                <div class="control">
+                    <button type="button" class="button is-light" onclick="toggleOptions()">Отмена</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateOptions(type) {
+    const container = document.getElementById('options-container');
+    if (type === 'text') {
+        container.style.display = 'none';
+    } else {
+        container.style.display = 'block';
+    }
+}
+
+function toggleOptions() {
+    const container = document.getElementById('options-container');
+    const select = document.querySelector('select[name="question_type"]');
+    if (container.style.display === 'none') {
+        container.style.display = 'block';
+        select.value = 'single_choice';
+    } else {
+        container.style.display = 'none';
+        select.value = 'text';
+    }
+}
+
+function editQuestion(questionId) {
+    // Здесь можно добавить логику редактирования вопроса
+    alert('Функция редактирования вопроса будет реализована позже');
+}
+function deleteQuestion(questionId) {
+    if (confirm('Вы уверены, что хотите удалить этот вопрос?')) {
+        // Здесь можно добавить логику удаления вопроса
+        alert('Функция удаления вопроса будет реализована позже');
+    }
+}
+</script>
+{% endblock %}

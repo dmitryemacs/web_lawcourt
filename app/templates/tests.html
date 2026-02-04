@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="title">Все тесты</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="notification {{ message.category }}">
+                {{ message.text }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="field is-grouped">
+        <p class="control">
+            <a href="/tests/create" class="button is-primary">
+                <span class="icon">
+                    <i class="fas fa-plus"></i>
+                </span>
+                <span>Создать тест</span>
+            </a>
+        </p>
+    </div>
+
+    <div class="table-container">
+        <table class="table is-striped is-hoverable">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Курс</th>
+                    <th>Предмет</th>
+                    <th>Максимальный балл</th>
+                    <th>Вопросов</th>
+                    <th>Создан</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for test in tests %}
+                <tr>
+                    <td>{{ test.name }}</td>
+                    <td>{{ test.course.subject.title }}</td>
+                    <td>{{ test.course.subject.code }}</td>
+                    <td>{{ test.max_score }}</td>
+                    <td>{{ test.questions|length }}</td>
+                    <td>{{ test.created_at.strftime('%d.%m.%Y') }}</td>
+                    <td>
+                        <div class="buttons are-small">
+                            <a href="/tests/{{ test.id }}" class="button is-info">Просмотр</a>
+                            <a href="/tests/{{ test.id }}/edit" class="button is-warning">Редактировать</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
