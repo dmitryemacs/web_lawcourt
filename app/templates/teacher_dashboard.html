@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Панель преподавателя</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { 
+      padding-top: 20px;
+      background-color: #f5f5f5;
+      min-height: 100vh;
+    }
+    .container { 
+      max-width: 1200px; 
+    }
+    .navbar {
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 3px rgba(10,10,10,.1);
+    }
+    .card {
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .course-card:hover {
+      transform: translateY(-2px);
+      transition: transform 0.2s ease-in-out;
+    }
+    .teacher-info {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+  </style>
+</head>
+<body>
+<section class="section">
+  <div class="container">
+    <!-- Шапка -->
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/teacher-dashboard">
+          <i class="fas fa-chalkboard-teacher mr-2"></i>
+          <strong>Панель преподавателя</strong>
+        </a>
+      </div>
+
+      <div class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="/courses">
+            <i class="fas fa-book mr-2"></i>
+            Курсы
+          </a>
+          <a class="navbar-item" href="/tests">
+            <i class="fas fa-clipboard-list mr-2"></i>
+            Тесты
+          </a>
+          <a class="navbar-item" href="/teacher-test-results">
+            <i class="fas fa-chart-bar mr-2"></i>
+            Результаты тестов
+          </a>
+        </div>
+
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <div class="buttons">
+              <a href="/teacher-logout" class="button is-danger is-light">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                Выйти
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Информация о преподавателе -->
+    <div class="teacher-info">
+      <div class="columns">
+        <div class="column">
+          <h1 class="title is-3 has-text-white">
+            <i class="fas fa-user-graduate mr-3"></i>
+            Добро пожаловать, {{ request.session.teacher_name }}!
+          </h1>
+          <p class="subtitle is-5 has-text-white-bis">
+            Управляйте вашими курсами и тестами
+          </p>
+        </div>
+        <div class="column is-narrow">
+          <div class="has-text-right">
+            <p class="has-text-white">
+              <i class="fas fa-envelope mr-2"></i>
+              {{ request.session.teacher_name|lower|replace(' ', '.') }}@university.ru
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Курсы преподавателя -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-header-title is-size-4">
+          <i class="fas fa-graduation-cap mr-2"></i>
+          Ваши курсы
+        </h2>
+      </div>
+      <div class="card-content">
+        {% if courses %}
+          <div class="columns is-multiline">
+            {% for course in courses %}
+            <div class="column is-one-third">
+              <div class="card course-card">
+                <div class="card-content">
+                  <div class="media">
+                    <div class="media-left">
+                      <div class="icon is-large">
+                        <i class="fas fa-book-open has-text-primary"></i>
+                      </div>
+                    </div>
+                    <div class="media-content">
+                      <p class="title is-6">{{ course.subject.title }}</p>
+                      <p class="subtitle is-7">{{ course.semester }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="content mt-4">
+                    <p class="has-text-grey">
+                      <i class="fas fa-users mr-2"></i>
+                      Группа: {{ course.group.name if course.group else 'Без группы' }}
+                    </p>
+                    <p class="has-text-grey">
+                      <i class="fas fa-clock mr-2"></i>
+                      Кредиты: {{ course.credits }}
+                    </p>
+                    
+                    <div class="buttons mt-4">
+                      <a href="/courses/{{ course.id }}" class="button is-small is-link">
+                        <i class="fas fa-eye mr-1"></i>
+                        Детали
+                      </a>
+                      <a href="/courses/{{ course.id }}/tests" class="button is-small is-success">
+                        <i class="fas fa-clipboard-list mr-1"></i>
+                        Тесты
+                      </a>
+                      <a href="/tests/create?course_id={{ course.id }}" class="button is-small is-primary">
+                        <i class="fas fa-plus mr-1"></i>
+                        Создать тест
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="has-text-centered has-text-grey">
+            <i class="fas fa-inbox fa-3x mb-3"></i>
+            <p class="is-size-4">У вас пока нет назначенных курсов</p>
+            <p>Обратитесь к администратору для назначения курсов</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Быстрые действия -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-header-title is-size-4">
+          <i class="fas fa-bolt mr-2"></i>
+          Быстрые действия
+        </h2>
+      </div>
+      <div class="card-content">
+        <div class="columns">
+          <div class="column">
+            <a href="/tests" class="button is-primary is-fullwidth">
+              <i class="fas fa-clipboard-list mr-2"></i>
+              Все тесты
+            </a>
+          </div>
+          <div class="column">
+            <a href="/teacher-test-results" class="button is-success is-fullwidth">
+              <i class="fas fa-chart-bar mr-2"></i>
+              Результаты тестов
+            </a>
+          </div>
+          <div class="column">
+            <a href="/courses" class="button is-info is-fullwidth">
+              <i class="fas fa-book mr-2"></i>
+              Все курсы
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Закрытие уведомлений
+  (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+    const $notification = $delete.parentNode;
+    $delete.addEventListener('click', () => {
+      $notification.parentNode.removeChild($notification);
+    });
+  });
+
+  // Подсветка активной страницы в навигации
+  const currentPath = window.location.pathname;
+  document.querySelectorAll('.navbar-item').forEach(item => {
+    if (item.getAttribute('href') === currentPath) {
+      item.classList.add('is-active');
+    }
+  });
+});
+</script>
+</body>
+</html>
