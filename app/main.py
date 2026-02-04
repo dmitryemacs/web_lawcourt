@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 from database import get_db, engine
-from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department
+from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department, Test, Question, TestResult, Answer
 
 # Система уведомлений
 class Message:
@@ -21,19 +21,18 @@ class Message:
 
 def get_messages(request: Request) -> List[Message]:
     """Получить уведомления из сессии"""
-    if not hasattr(request.state, 'messages'):
-        request.state.messages = []
-    return request.state.messages
+    raw = request.session.get("messages", [])
+    return [Message(m.get("text", ""), m.get("category", "is-info")) for m in raw]
 
 def add_message(request: Request, text: str, category: str = "is-info"):
-    """Добавить уведомление"""
-    messages = get_messages(request)
-    messages.append(Message(text, category))
+    """Добавить уведомление в сессию"""
+    raw = request.session.get("messages", [])
+    raw.append({"text": text, "category": category})
+    request.session["messages"] = raw
 
 def clear_messages(request: Request):
     """Очистить уведомления"""
-    if hasattr(request.state, 'messages'):
-        request.state.messages = []
+    request.session.pop("messages", None)
 
 app = FastAPI(title="University App")
 
@@ -381,15 +380,470 @@ def add_subject(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при добавлении предмета: {str(e)}")
 
+@app.get("/tests", response_class=HTMLResponse)
+def tests_view(request: Request, db: Session = Depends(get_db)):
+    """Просмотр всех тестов"""
+    tests = db.execute(
+        select(Test)
+        .join(Test.course)
+        .join(Course.subject)
+        .order_by(Test.created_at.desc())
+    ).scalars().all()
+
+    return templates.TemplateResponse("tests.html", {
+        "request": request,
+        "tests": tests
+    })
+
+@app.get("/tests/create", response_class=HTMLResponse)
+def create_test_form(request: Request, db: Session = Depends(get_db)):
+    """Форма создания теста"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    courses = db.execute(
+        select(Course)
+        .where(Course.teacher_id == teacher_id)
+        .join(Course.subject)
+        .join(Course.group, isouter=True)
+        .order_by(Course.semester, Course.id)
+    ).scalars().all()
+
+    return templates.TemplateResponse("create_test.html", {
+        "request": request,
+        "courses": courses
+    })
+
+@app.post("/tests/create")
+def create_test(
+    request: Request,
+    course_id: int = Form(...),
+    name: str = Form(...),
+    description: str = Form(None),
+    max_score: int = Form(100),
+    time_limit: int = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Создание теста"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    # Проверяем, что преподаватель действительно ведет этот курс
+    course = db.get(Course, course_id)
+    if not course or course.teacher_id != teacher_id:
+        add_message(request, "Вы не можете создавать тесты для этого курса", "is-danger")
+        return RedirectResponse(url='/tests/create', status_code=303)
+
+    test = Test(
+        course_id=course_id,
+        name=name,
+        description=description,
+        max_score=max_score,
+        time_limit=time_limit
+    )
+    db.add(test)
+    db.commit()
+    add_message(request, "Тест создан успешно!", "is-success")
+    return RedirectResponse(url=f'/tests/{test.id}/edit', status_code=303)
+
+@app.get("/tests/{test_id}/edit", response_class=HTMLResponse)
+def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
+    """Редактирование теста и добавление вопросов"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    test = db.get(Test, test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    # Проверяем, что преподаватель действительно ведет этот курс
+    if test.course.teacher_id != teacher_id:
+        add_message(request, "Вы не можете редактировать этот тест", "is-danger")
+        return RedirectResponse(url='/teacher-dashboard', status_code=303)
+
+    questions = db.execute(
+        select(Question).where(Question.test_id == test_id).order_by(Question.order)
+    ).scalars().all()
+
+    return templates.TemplateResponse("edit_test.html", {
+        "request": request,
+        "test": test,
+        "questions": questions
+    })
+
+@app.post("/tests/{test_id}/questions/add")
+def add_question(
+    request: Request,
+    test_id: int = Form(...),
+    text: str = Form(...),
+    question_type: str = Form(...),
+    options: str = Form(None),
+    correct_answer: str = Form(None),
+    points: int = Form(1),
+    db: Session = Depends(get_db)
+):
+    """Добавление вопроса к тесту"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    test = db.get(Test, test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    # Проверяем, что преподаватель действительно ведет этот курс
+    if test.course.teacher_id != teacher_id:
+        add_message(request, "Вы не можете добавлять вопросы к этому тесту", "is-danger")
+        return RedirectResponse(url='/teacher-dashboard', status_code=303)
+
+    # Определяем порядок вопроса
+    last_order = db.execute(
+        select(Question.order)
+        .where(Question.test_id == test_id)
+        .order_by(Question.order.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+
+    question = Question(
+        test_id=test_id,
+        text=text,
+        order=(last_order + 1) if last_order is not None else 1,
+        type=question_type,
+        options=options,
+        correct_answer=correct_answer,
+        points=points
+    )
+    db.add(question)
+    db.commit()
+    add_message(request, "Вопрос добавлен успешно!", "is-success")
+    return RedirectResponse(url=f'/tests/{test_id}/edit', status_code=303)
+
+@app.get("/tests/{test_id}", response_class=HTMLResponse)
+def test_detail(request: Request, test_id: int, db: Session = Depends(get_db)):
+    """Просмотр деталей теста"""
+    test = db.execute(
+        select(Test)
+        .where(Test.id == test_id)
+        .join(Test.course)
+        .join(Course.subject)
+        .join(Course.teacher, isouter=True)
+    ).scalar_one_or_none()
+
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    questions = db.execute(
+        select(Question).where(Question.test_id == test_id).order_by(Question.order)
+    ).scalars().all()
+
+    return templates.TemplateResponse("test_detail.html", {
+        "request": request,
+        "test": test,
+        "questions": questions
+    })
+
+@app.get("/courses/{course_id}/tests", response_class=HTMLResponse)
+def course_tests(request: Request, course_id: int, db: Session = Depends(get_db)):
+    """Тесты для конкретного курса"""
+    course = db.get(Course, course_id)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    tests = db.execute(
+        select(Test).where(Test.course_id == course_id).order_by(Test.created_at.desc())
+    ).scalars().all()
+
+    return templates.TemplateResponse("course_tests.html", {
+        "request": request,
+        "course": course,
+        "tests": tests
+    })
+
+@app.get("/take-test/{test_id}", response_class=HTMLResponse)
+def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
+    """Начало прохождения теста"""
+    test = db.get(Test, test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    # Проверяем, может ли студент проходить этот тест
+    student_id = request.session.get("student_id")
+    if not student_id:
+        add_message(request, "Сначала войдите в систему как студент", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Проверяем, записан ли студент на курс
+    enrollment = db.execute(
+        select(Enrollment)
+        .where(Enrollment.student_id == student_id)
+        .where(Enrollment.course_id == test.course_id)
+    ).scalar_one_or_none()
+
+    if not enrollment:
+        add_message(request, "Вы не записаны на этот курс", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Проверяем, не проходил ли студент уже этот тест
+    existing_result = db.execute(
+        select(TestResult)
+        .where(TestResult.test_id == test_id)
+        .where(TestResult.student_id == student_id)
+    ).scalar_one_or_none()
+
+    if existing_result:
+        add_message(request, "Вы уже проходили этот тест", "is-info")
+        return RedirectResponse(url=f'/test-results/{existing_result.id}', status_code=303)
+
+    questions = db.execute(
+        select(Question).where(Question.test_id == test_id).order_by(Question.order)
+    ).scalars().all()
+
+    return templates.TemplateResponse("take_test.html", {
+        "request": request,
+        "test": test,
+        "questions": questions
+    })
+
+@app.post("/submit-test/{test_id}")
+def submit_test(
+    request: Request,
+    test_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Сохранение результатов теста"""
+    student_id = request.session.get("student_id")
+    if not student_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    test = db.get(Test, test_id)
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+
+    # Создаем результат теста
+    result = TestResult(
+        test_id=test_id,
+        student_id=student_id,
+        score=0,
+        max_score=test.max_score
+    )
+    db.add(result)
+    db.flush()
+
+    # Обрабатываем ответы
+    total_score = 0
+    for question in test.questions:
+        answer_value = request.form.get(f"question_{question.id}")
+        is_correct = False
+        points_earned = 0
+
+        if question.type == "text":
+            if answer_value and answer_value.strip().lower() == question.correct_answer.lower():
+                is_correct = True
+                points_earned = question.points
+        elif question.type == "single_choice":
+            if answer_value and answer_value == question.correct_answer:
+                is_correct = True
+                points_earned = question.points
+        elif question.type == "multiple_choice":
+            if answer_value:
+                selected = set(answer_value.split(","))
+                correct = set(question.correct_answer.split(","))
+                if selected == correct:
+                    is_correct = True
+                    points_earned = question.points
+
+        answer = Answer(
+            result_id=result.id,
+            question_id=question.id,
+            answer_text=answer_value or "",
+            is_correct=is_correct,
+            points_earned=points_earned
+        )
+        db.add(answer)
+        total_score += points_earned
+
+    # Обновляем результат
+    result.score = total_score
+    result.passed = total_score >= (test.max_score * 0.6)  # Проходной балл 60%
+    db.commit()
+
+    add_message(request, f"Тест завершен! Вы набрали {total_score} из {test.max_score}", "is-success")
+    return RedirectResponse(url=f'/test-results/{result.id}', status_code=303)
+
+@app.get("/login", response_class=HTMLResponse)
+def login_form(request: Request, db: Session = Depends(get_db)):
+    """Форма входа для студентов"""
+    return templates.TemplateResponse("login.html", {
+        "request": request
+    })
+
+@app.post("/login")
+def login(
+    request: Request,
+    email: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Вход студента"""
+    student = db.execute(
+        select(Student).where(Student.email == email)
+    ).scalar_one_or_none()
+
+    if not student:
+        add_message(request, "Студент с таким email не найден", "is-danger")
+        return RedirectResponse(url='/login', status_code=303)
+
+    # Сохраняем id студента в сессии
+    request.session["student_id"] = student.id
+    request.session["student_name"] = f"{student.first_name} {student.last_name}"
+
+    add_message(request, f"Добро пожаловать, {student.first_name}!", "is-success")
+    return RedirectResponse(url='/', status_code=303)
+
+@app.get("/logout")
+def logout(request: Request):
+    """Выход студента"""
+    # Удаляем ключи безопасно
+    request.session.pop("student_id", None)
+    request.session.pop("student_name", None)
+    request.session.pop("user_role", None)
+
+    add_message(request, "Вы вышли из системы", "is-info")
+    return RedirectResponse(url='/', status_code=303)
+
+@app.get("/teacher-login", response_class=HTMLResponse)
+def teacher_login_form(request: Request, db: Session = Depends(get_db)):
+    """Форма входа для преподавателей"""
+    return templates.TemplateResponse("teacher_login.html", {
+        "request": request
+    })
+
+@app.post("/teacher-login")
+def teacher_login(
+    request: Request,
+    email: str = Form(...),
+    access_code: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Вход преподавателя"""
+    # Простой код доступа для демонстрации
+    if access_code != "teacher123":
+        add_message(request, "Неверный код доступа", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    teacher = db.execute(
+        select(Teacher).where(Teacher.email == email)
+    ).scalar_one_or_none()
+
+    if not teacher:
+        add_message(request, "Преподаватель с таким email не найден", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    # Сохраняем id преподавателя в сессии
+    request.session["teacher_id"] = teacher.id
+    request.session["teacher_name"] = f"{teacher.first_name} {teacher.last_name}"
+    request.session["user_role"] = "teacher"
+
+    add_message(request, f"Добро пожаловать, {teacher.first_name}!", "is-success")
+    return RedirectResponse(url='/teacher-dashboard', status_code=303)
+
+@app.get("/teacher-logout")
+def teacher_logout(request: Request):
+    """Выход преподавателя"""
+    # Удаляем ключи безопасно
+    request.session.pop("teacher_id", None)
+    request.session.pop("teacher_name", None)
+    request.session.pop("user_role", None)
+
+    add_message(request, "Вы вышли из системы", "is-info")
+    return RedirectResponse(url='/', status_code=303)
+
+@app.get("/teacher-dashboard", response_class=HTMLResponse)
+def teacher_dashboard(request: Request, db: Session = Depends(get_db)):
+    """Панель преподавателя"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    # Получаем курсы преподавателя
+    courses = db.execute(
+        select(Course)
+        .where(Course.teacher_id == teacher_id)
+        .join(Course.subject)
+        .join(Course.group, isouter=True)
+        .order_by(Course.semester, Course.id)
+    ).scalars().all()
+
+    return templates.TemplateResponse("teacher_dashboard.html", {
+        "request": request,
+        "courses": courses
+    })
+
+@app.get("/teacher-test-results", response_class=HTMLResponse)
+def teacher_test_results(request: Request, db: Session = Depends(get_db)):
+    """Просмотр результатов тестов преподавателем"""
+    teacher_id = request.session.get("teacher_id")
+    if not teacher_id:
+        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
+        return RedirectResponse(url='/teacher-login', status_code=303)
+
+    # Получаем курсы преподавателя
+    teacher_courses = db.execute(
+        select(Course)
+        .where(Course.teacher_id == teacher_id)
+        .join(Course.subject)
+        .join(Course.group, isouter=True)
+        .order_by(Course.semester, Course.id)
+    ).scalars().all()
+
+    # Получаем результаты тестов по курсам преподавателя
+    test_results = db.execute(
+        select(TestResult)
+        .join(TestResult.test)
+        .join(Test.course)
+        .where(Course.teacher_id == teacher_id)
+        .join(TestResult.student)
+        .order_by(TestResult.completed_at.desc())
+        .limit(50)
+    ).scalars().all()
+
+    # Считаем статистику
+    total_tests = len([t for t in teacher_courses for _ in t.tests])
+    completed_tests = len(test_results)
+    passed_tests = sum(1 for r in test_results if r.passed)
+    failed_tests = completed_tests - passed_tests
+
+    return templates.TemplateResponse("teacher_test_results.html", {
+        "request": request,
+        "courses": teacher_courses,
+        "test_results": test_results,
+        "total_tests": total_tests,
+        "completed_tests": completed_tests,
+        "passed_tests": passed_tests,
+        "failed_tests": failed_tests
+    })
+
+def require_teacher(request: Request):
+    """Декоратор для проверки роли преподавателя"""
+    if not request.session.get("user_role") == "teacher":
+        raise HTTPException(status_code=403, detail="Access denied - teacher required")
+
+def require_student(request: Request):
+    """Декоратор для проверки роли студента"""
+    if not request.session.get("student_id"):
+        raise HTTPException(status_code=403, detail="Access denied - student required")
+
 @app.get("/init-data")
 def init_sample_data(db: Session = Depends(get_db)):
-    """Инициализация тестовых данных"""
+    """Создание тестовых данных"""
     try:
-        # Проверяем, есть ли уже данные
-        existing_dept = db.execute(select(Department).limit(1)).scalar_one_or_none()
-        if existing_dept:
-            return {"message": "Sample data already exists"}
-
         # Создаем кафедру
         dept = Department(name="Факультет компьютерных наук")
         db.add(dept)
