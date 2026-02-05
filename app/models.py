@@ -11,6 +11,7 @@ class Student(Base):
     email = Column(String, unique=True, index=True)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
     enroll_date = Column(DateTime, default=func.now())
+    group = relationship("Group", back_populates="students")
     grades = relationship("Grade", back_populates="student")
     enrollments = relationship("Enrollment", back_populates="student")
 
@@ -61,6 +62,7 @@ class TestResult(Base):
     max_score = Column(Integer)
     passed = Column(Boolean, default=False)
     completed_at = Column(DateTime, default=func.now())
+    test = relationship("Test", back_populates="results")
     answers = relationship("Answer", back_populates="result")
 
 class Answer(Base):
@@ -71,6 +73,7 @@ class Answer(Base):
     answer_text = Column(Text)
     is_correct = Column(Boolean, default=False)
     points_earned = Column(Integer, default=0)
+    result = relationship("TestResult", back_populates="answers")
     question = relationship("Question")
 
 class Enrollment(Base):

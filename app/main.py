@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text, select
 import time
@@ -35,6 +36,7 @@ def clear_messages(request: Request):
     request.session.pop("messages", None)
 
 app = FastAPI(title="University App")
+app.add_middleware(SessionMiddleware, secret_key="your-secret-key-change-in-production")
 
 # Функция ожидания подключения к базе данных
 def wait_for_db():
@@ -458,7 +460,12 @@ def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
         add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
         return RedirectResponse(url='/teacher-login', status_code=303)
 
-    test = db.get(Test, test_id)
+    test = db.execute(
+        select(Test)
+        .where(Test.id == test_id)
+        .join(Test.course)
+    ).scalar_one_or_none()
+    
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
@@ -480,7 +487,7 @@ def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
 @app.post("/tests/{test_id}/questions/add")
 def add_question(
     request: Request,
-    test_id: int = Form(...),
+    test_id: int,
     text: str = Form(...),
     question_type: str = Form(...),
     options: str = Form(None),
@@ -494,7 +501,12 @@ def add_question(
         add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
         return RedirectResponse(url='/teacher-login', status_code=303)
 
-    test = db.get(Test, test_id)
+    test = db.execute(
+        select(Test)
+        .where(Test.id == test_id)
+        .join(Test.course)
+    ).scalar_one_or_none()
+    
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
@@ -569,7 +581,12 @@ def course_tests(request: Request, course_id: int, db: Session = Depends(get_db)
 @app.get("/take-test/{test_id}", response_class=HTMLResponse)
 def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
     """Начало прохождения теста"""
-    test = db.get(Test, test_id)
+    test = db.execute(
+        select(Test)
+        .where(Test.id == test_id)
+        .join(Test.course)
+    ).scalar_one_or_none()
+    
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
@@ -614,7 +631,7 @@ def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
 @app.post("/submit-test/{test_id}")
 def submit_test(
     request: Request,
-    test_id: int = Form(...),
+    test_id: int,
     db: Session = Depends(get_db)
 ):
     """Сохранение результатов теста"""
@@ -677,6 +694,121 @@ def submit_test(
     add_message(request, f"Тест завершен! Вы набрали {total_score} из {test.max_score}", "is-success")
     return RedirectResponse(url=f'/test-results/{result.id}', status_code=303)
 
+@app.get("/register", response_class=HTMLResponse)
+def register_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    role: str = None,
+    first_name: str = None,
+    last_name: str = None,
+    email: str = None,
+    group_id: int = None,
+    access_code: str = None
+):
+    """Форма регистрации"""
+    # Получаем список групп для выбора
+    groups = db.execute(select(Group).order_by(Group.name)).scalars().all()
+    
+    return templates.TemplateResponse("register.html", {
+        "request": request,
+        "groups": groups,
+        "role": role,
+        "first_name": first_name,
+        "last_name": last_name,
+        "email": email,
+        "group_id": group_id,
+        "access_code": access_code
+    })
+
+@app.post("/register")
+def register(
+    request: Request,
+    role: str = Form(...),
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    email: str = Form(...),
+    group_id: str = Form(None),
+    access_code: str = Form(None),
+    db: Session = Depends(get_db)
+):
+    """Регистрация пользователя (студента или преподавателя)"""
+    
+    # Проверяем, что email не занят
+    existing_student = db.execute(
+        select(Student).where(Student.email == email)
+    ).scalar_one_or_none()
+    
+    existing_teacher = db.execute(
+        select(Teacher).where(Teacher.email == email)
+    ).scalar_one_or_none()
+    
+    if existing_student or existing_teacher:
+        add_message(request, "Пользователь с таким email уже существует", "is-danger")
+        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+    
+    if role == "student":
+        # Регистрация студента
+        if not group_id or group_id == "":
+            add_message(request, "Необходимо выбрать группу", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        
+        try:
+            group_id_int = int(group_id)
+        except (ValueError, TypeError):
+            add_message(request, "Неверная группа", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        
+        try:
+            student = Student(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                group_id=group_id_int
+            )
+            db.add(student)
+            db.commit()
+            
+            add_message(request, "Регистрация успешна! Теперь вы можете войти в систему", "is-success")
+            return RedirectResponse(url='/login', status_code=303)
+        except Exception as e:
+            db.rollback()
+            print(f"Error registering student: {e}")
+            add_message(request, f"Ошибка при регистрации: {str(e)}", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        
+    elif role == "teacher":
+        # Регистрация преподавателя
+        if not access_code:
+            add_message(request, "Необходимо ввести код доступа", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        
+        # Проверяем код доступа (можно настроить более сложную логику)
+        if access_code != "teacher123":
+            add_message(request, "Неверный код доступа", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        
+        try:
+            teacher = Teacher(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                department_id=None  # Можно добавить выбор кафедры позже
+            )
+            db.add(teacher)
+            db.commit()
+            
+            add_message(request, "Регистрация успешна! Теперь вы можете войти в систему", "is-success")
+            return RedirectResponse(url='/teacher-login', status_code=303)
+        except Exception as e:
+            db.rollback()
+            print(f"Error registering teacher: {e}")
+            add_message(request, f"Ошибка при регистрации: {str(e)}", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+    
+    else:
+        add_message(request, "Неверный тип аккаунта", "is-danger")
+        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request, db: Session = Depends(get_db)):
     """Форма входа для студентов"""
@@ -702,6 +834,7 @@ def login(
     # Сохраняем id студента в сессии
     request.session["student_id"] = student.id
     request.session["student_name"] = f"{student.first_name} {student.last_name}"
+    request.session["user_role"] = "student"
 
     add_message(request, f"Добро пожаловать, {student.first_name}!", "is-success")
     return RedirectResponse(url='/', status_code=303)
@@ -1018,7 +1151,21 @@ def init_sample_data(db: Session = Depends(get_db)):
         db.add_all(grades)
 
         db.commit()
-        return {"message": "Sample data created successfully"}
+        
+        # Подготавливаем информацию для вывода
+        test_data = {
+            "message": "Тестовые данные созданы успешно!",
+            "students": [
+                {"name": f"{s.first_name} {s.last_name}", "email": s.email}
+                for s in students
+            ],
+            "teachers": [
+                {"name": f"{t.first_name} {t.last_name}", "email": t.email}
+                for t in [teacher1, teacher2]
+            ],
+            "teacher_access_code": "teacher123"
+        }
+        return test_data
 
     except Exception as e:
         db.rollback()

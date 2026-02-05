@@ -31,10 +31,21 @@
     }
     .notification {
       position: fixed;
-      top: 20px;
       right: 20px;
       z-index: 1000;
       max-width: 400px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      animation: slideIn 0.3s ease-in-out;
+    }
+    @keyframes slideIn {
+      from {
+        transform: translateX(450px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
@@ -95,11 +106,11 @@
         <div class="navbar-end">
           <div class="navbar-item">
             <div class="buttons">
-              <!-- Кнопка для тестовых данных (только для админов) -->
-              {% if request.session.user_role == "admin" %}
+              <!-- Кнопка для инициализации тестовых данных -->
+              {% if not request.session.student_id and not request.session.user_role %}
                 <a href="/init-data" class="button is-info is-light">
                   <i class="fas fa-database mr-2"></i>
-                  Тестовые данные
+                  Инициализация данных
                 </a>
               {% endif %}
               
@@ -147,14 +158,12 @@
 
     <!-- Уведомления -->
     {% if messages %}
-      <div class="notifications">
-        {% for message in messages %}
-          <div class="notification {{ message.category }}">
-            <button class="delete"></button>
-            <strong>{{ message.text }}</strong>
-          </div>
-        {% endfor %}
-      </div>
+      {% for message in messages %}
+        <div class="notification {{ message.category }}">
+          <button class="delete"></button>
+          <strong>{{ message.text }}</strong>
+        </div>
+      {% endfor %}
     {% endif %}
 
     <!-- Приветствие пользователя -->
@@ -199,12 +208,42 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  // Закрытие уведомлений
-  (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
-    const $notification = $delete.parentNode;
-    $delete.addEventListener('click', () => {
-      $notification.parentNode.removeChild($notification);
+  // Функция для позиционирования уведомлений
+  function repositionNotifications() {
+    const notifications = document.querySelectorAll('.notification');
+    let topPosition = 20;
+    
+    notifications.forEach(notification => {
+      notification.style.top = topPosition + 'px';
+      topPosition += notification.offsetHeight + 15; // 15px промежутка
     });
+  }
+  
+  // Позиционируем уведомления при загрузке
+  repositionNotifications();
+  
+  // Закрытие уведомлений при клике на кнопку delete
+  document.querySelectorAll('.notification .delete').forEach(deleteBtn => {
+    deleteBtn.addEventListener('click', () => {
+      deleteBtn.parentElement.style.opacity = '0';
+      deleteBtn.parentElement.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => {
+        deleteBtn.parentElement.remove();
+        repositionNotifications();
+      }, 300);
+    });
+  });
+  
+  // Автоматическое скрытие уведомлений через 5 секунд
+  document.querySelectorAll('.notification').forEach(notification => {
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => {
+        notification.remove();
+        repositionNotifications();
+      }, 300);
+    }, 5000);
   });
   
   // Подсветка активной страницы в навигации
