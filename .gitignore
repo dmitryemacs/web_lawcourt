@@ -1,0 +1,12 @@
+.env
+*.pyc
+__pycache__/
+*.sqlite3
+*.db
+test_*.db
+.pytest_cache/
+.venv/
+venv/
+.DS_Store
+docker-compose.override.yml
+*.log
