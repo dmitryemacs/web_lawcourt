@@ -6,54 +6,7 @@
   <title>Результаты тестов - Преподаватель</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .container { 
-      max-width: 1200px; 
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
-    .card {
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    .result-card:hover {
-      transform: translateY(-2px);
-      transition: transform 0.2s ease-in-out;
-    }
-    .passed { color: #23d160; }
-    .failed { color: #ff3860; }
-    .stat-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .stat-box {
-      background: white;
-      padding: 1.5rem;
-      border-radius: 8px;
-      text-align: center;
-      border: 1px solid #e0e0e0;
-    }
-    .stat-number {
-      font-size: 2rem;
-      font-weight: bold;
-      margin-bottom: 0.5rem;
-    }
-    .stat-label {
-      color: #666;
-      font-size: 0.9rem;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', path='modern.css') }}">
 </head>
 <body>
 <section class="section">
@@ -62,7 +15,7 @@
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="/teacher-dashboard">
-          <i class="fas fa-chalkboard-teacher mr-2"></i>
+          <i class="fas fa-chalkboard-teacher mr-2" style="font-size: 1.3rem;"></i>
           <strong>Панель преподавателя</strong>
         </a>
       </div>
@@ -74,7 +27,7 @@
             Курсы
           </a>
           <a class="navbar-item" href="/tests">
-            <i class="fas fa-clipboard-list mr-2"></i>
+            <i class="fas fa-flask mr-2"></i>
             Тесты
           </a>
           <a class="navbar-item is-active" href="/teacher-test-results">
@@ -97,89 +50,105 @@
     </nav>
 
     <!-- Заголовок -->
-    <div class="card">
-      <div class="card-content">
-        <h1 class="title is-3">
-          <i class="fas fa-chart-line mr-2"></i>
-          Результаты тестов
-        </h1>
-        <p class="subtitle is-5">Анализ успеваемости студентов</p>
-      </div>
+    <div class="box has-shadow mb-4">
+      <h1 class="title has-text-primary">
+        <i class="fas fa-chart-line mr-2"></i>
+        Результаты тестов
+      </h1>
+      <p class="subtitle is-5">Анализ успеваемости студентов</p>
     </div>
 
     <!-- Статистика -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-header-title is-size-4">
-          <i class="fas fa-chart-pie mr-2"></i>
-          Общая статистика
-        </h2>
-      </div>
-      <div class="card-content">
-        <div class="stat-grid">
-          <div class="stat-box">
-            <div class="stat-number has-text-primary">{{ total_tests }}</div>
-            <div class="stat-label">Всего тестов</div>
+    <div class="box has-shadow mb-4">
+      <h2 class="title is-4 mb-4">
+        <i class="fas fa-chart-pie mr-2"></i>
+        Общая статистика
+      </h2>
+      <div class="columns">
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-primary">{{ total_tests }}</p>
+              <p class="subtitle is-6">Всего тестов</p>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="stat-number has-text-success">{{ completed_tests }}</div>
-            <div class="stat-label">Пройдено тестов</div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-success">{{ completed_tests }}</p>
+              <p class="subtitle is-6">Пройдено тестов</p>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="stat-number has-text-warning">{{ passed_tests }}</div>
-            <div class="stat-label">Зачтено</div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-warning">{{ passed_tests }}</p>
+              <p class="subtitle is-6">Зачтено</p>
+            </div>
           </div>
-          <div class="stat-box">
-            <div class="stat-number has-text-danger">{{ failed_tests }}</div>
-            <div class="stat-label">Не зачтено</div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-danger">{{ failed_tests }}</p>
+              <p class="subtitle is-6">Не зачтено</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Фильтры -->
-    <div class="card">
-      <div class="card-content">
-        <div class="field is-grouped">
-          <div class="control">
-            <div class="select">
-              <select id="courseFilter">
-                <option value="">Все курсы</option>
-                {% for course in courses %}
-                <option value="{{ course.id }}">{{ course.subject.title }} ({{ course.semester }})</option>
-                {% endfor %}
-              </select>
-            </div>
+    <div class="box has-shadow mb-4">
+      <h3 class="title is-5 mb-4">
+        <i class="fas fa-filter mr-2"></i>
+        Фильтры
+      </h3>
+      <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="select">
+            <select id="courseFilter">
+              <option value="">Все курсы</option>
+              {% for course in courses %}
+              <option value="{{ course.id }}">{{ course.subject.title }} ({{ course.semester }})</option>
+              {% endfor %}
+            </select>
           </div>
-          <div class="control">
-            <div class="select">
-              <select id="statusFilter">
-                <option value="">Все статусы</option>
-                <option value="passed">Зачтено</option>
-                <option value="failed">Не зачтено</option>
-              </select>
-            </div>
+        </div>
+        <div class="control">
+          <div class="select">
+            <select id="statusFilter">
+              <option value="">Все статусы</option>
+              <option value="passed">
+                <i class="fas fa-check mr-1"></i>Зачтено
+              </option>
+              <option value="failed">
+                <i class="fas fa-times mr-1"></i>Не зачтено
+              </option>
+            </select>
           </div>
-          <div class="control">
-            <button class="button is-primary" onclick="filterResults()">
-              <i class="fas fa-filter mr-2"></i>
-              Применить фильтр
-            </button>
-          </div>
+        </div>
+        <div class="control">
+          <button class="button is-primary" onclick="filterResults()">
+            <span class="icon">
+              <i class="fas fa-check"></i>
+            </span>
+            <span>Применить фильтр</span>
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Результаты тестов -->
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-header-title is-size-4">
-          <i class="fas fa-list mr-2"></i>
-          Последние результаты
-        </h2>
-      </div>
-      <div class="card-content">
-        {% if test_results %}
+    <div class="box has-shadow">
+      <h2 class="title is-4 mb-4">
+        <i class="fas fa-list-check mr-2"></i>
+        Последние результаты
+      </h2>
+      {% if test_results %}
+        <div class="table-container">
           <table class="table is-fullwidth is-striped">
             <thead>
               <tr>
@@ -198,57 +167,65 @@
                 <td>
                   <div class="media">
                     <div class="media-left">
-                      <div class="icon is-large">
+                      <div class="icon">
                         <i class="fas fa-user-graduate has-text-primary"></i>
                       </div>
                     </div>
                     <div class="media-content">
-                      <p class="title is-6">{{ result.student.first_name }} {{ result.student.last_name }}</p>
-                      <p class="subtitle is-7">{{ result.student.email }}</p>
+                      <p class="title is-6 mb-0">{{ result.student.first_name }} {{ result.student.last_name }}</p>
+                      <p class="subtitle is-7 has-text-grey">{{ result.student.email }}</p>
                     </div>
                   </div>
                 </td>
                 <td>
                   <strong>{{ result.test.name }}</strong>
                   <br>
-                  <small class="has-text-grey">{{ result.test.description[:100] }}...</small>
+                  <small class="has-text-grey">{{ result.test.description[:50] }}{% if result.test.description and result.test.description|length > 50 %}...{% endif %}</small>
                 </td>
-                <td>{{ result.test.subject.title }}</td>
                 <td>
-                  <span class="tag is-medium is-light">
-                    {{ result.score }} / {{ result.max_score }}
+                  <span class="tag is-info is-light">{{ result.test.course.subject.title }}</span>
+                </td>
+                <td>
+                  <span class="tag is-warning is-light is-medium">
+                    <strong>{{ result.score }} / {{ result.max_score }}</strong>
                   </span>
                 </td>
                 <td>
                   {% if result.passed %}
-                    <span class="tag is-success passed">
+                    <span class="tag is-success is-light">
                       <i class="fas fa-check mr-1"></i>Зачтено
                     </span>
                   {% else %}
-                    <span class="tag is-danger failed">
+                    <span class="tag is-danger is-light">
                       <i class="fas fa-times mr-1"></i>Не зачтено
                     </span>
                   {% endif %}
                 </td>
-                <td>{{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}</td>
                 <td>
-                  <a href="/test-results/{{ result.id }}" class="button is-small is-link">
-                    <i class="fas fa-eye mr-1"></i>
-                    Детали
+                  <span class="has-text-grey is-small">{{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                </td>
+                <td>
+                  <a href="/test-results/{{ result.id }}" class="button is-small is-info is-light">
+                    <span class="icon">
+                      <i class="fas fa-eye"></i>
+                    </span>
+                    <span>Детали</span>
                   </a>
                 </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
-        {% else %}
-          <div class="has-text-centered has-text-grey">
-            <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-            <p class="is-size-4">Пока нет результатов тестов</p>
-            <p>Студенты еще не проходили тесты</p>
+        </div>
+      {% else %}
+        <div class="box has-shadow has-text-centered">
+          <div class="mb-4">
+            <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #ccc;"></i>
           </div>
-        {% endif %}
-      </div>
+          <p class="title is-4">Пока нет результатов тестов</p>
+          <p class="subtitle is-6 has-text-grey">Студенты еще не проходили тесты</p>
+        </div>
+      {% endif %}
     </div>
   </div>
 </section>
