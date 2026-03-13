@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дело {{ case.case_number }}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='modern.css') }}">
+</head>
+<body>
+    <section class="section">
+        <div class="container">
+            <div class="box has-shadow mb-4">
+                <div class="level">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <h1 class="title has-text-primary">
+                                <i class="fas fa-gavel mr-2"></i>
+                                Дело {{ case.case_number }}
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <a href="/judicial/judge-dashboard" class="button is-light">
+                                <span class="icon">
+                                    <i class="fas fa-arrow-left"></i>
+                                </span>
+                                <span>Назад</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="columns">
+                <div class="column is-8">
+                    <div class="box has-shadow mb-4">
+                        <h2 class="title is-4 mb-4">
+                            <i class="fas fa-file-alt mr-2"></i>
+                            {{ case.title }}
+                        </h2>
+                        
+                        <div class="content">
+                            <p>
+                                <strong>Номер дела:</strong><br>
+                                <code>{{ case.case_number }}</code>
+                            </p>
+                            <p>
+                                <strong>Тип дела:</strong><br>
+                                <span class="tag is-info is-light">{{ case.case_type }}</span>
+                            </p>
+                            <p>
+                                <strong>Статус:</strong><br>
+                                <span class="tag is-warning is-light">{{ case.status }}</span>
+                            </p>
+                            <p>
+                                <strong>Стороны:</strong><br>
+                                {{ case.parties }}
+                            </p>
+                            <p>
+                                <strong>Судья:</strong><br>
+                                <i class="fas fa-user mr-1"></i>
+                                {{ case.judge.name if case.judge else 'Не назначен' }}
+                            </p>
+                            <p>
+                                <strong>Секретарь:</strong><br>
+                                <i class="fas fa-users mr-1"></i>
+                                {{ case.secretary or 'Не назначен' }}
+                            </p>
+                            <p>
+                                <strong>Дата следующего слушания:</strong><br>
+                                <i class="fas fa-calendar mr-1"></i>
+                                {% if case.next_hearing %}
+                                    {{ case.next_hearing.strftime('%d.%m.%Y %H:%M') }}
+                                {% else %}
+                                    <em class="has-text-grey">Не назначено</em>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>Видеоконференция:</strong><br>
+                                {% if case.is_video %}
+                                    <span class="tag is-success is-light">
+                                        <i class="fas fa-video mr-1"></i>
+                                        Включена
+                                    </span>
+                                {% else %}
+                                    <span class="tag is-light">
+                                        <i class="fas fa-times mr-1"></i>
+                                        Отключена
+                                    </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="column is-4">
+                    <div class="box has-shadow">
+                        <h3 class="title is-5 mb-4">
+                            <i class="fas fa-cogs mr-2"></i>
+                            Действия
+                        </h3>
+                        <form method="GET" action="/demo/judge-dashboard" class="mb-3">
+                            <button class="button is-warning is-fullwidth" type="submit">
+                                <span class="icon">
+                                    <i class="fas fa-edit"></i>
+                                </span>
+                                <span>Редактировать</span>
+                            </button>
+                        </form>
+                        <form method="POST" action="/cases/{{ case.id }}/close">
+                            <button class="button is-danger is-fullwidth" type="submit">
+                                <span class="icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </span>
+                                <span>Закрыть дело</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
