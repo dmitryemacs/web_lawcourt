@@ -2,141 +2,186 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="title">Тест: {{ test.name }}</h1>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="notification {{ message.category }}">
-                {{ message.text }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-<div class="field is-grouped">
-    <p class="control">
-        <a href="/tests/{{ test.id }}/edit" class="button is-warning">
+  <div class="box has-shadow mb-4">
+    <div class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <h1 class="title has-text-primary">
+            <i class="fas fa-flask mr-2"></i>
+            Тест: {{ test.name }}
+          </h1>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <a href="/tests/{{ test.id }}/edit" class="button is-warning mr-2">
             <span class="icon">
-                <i class="fas fa-edit"></i>
+              <i class="fas fa-edit"></i>
             </span>
-            <span>Редактировать тест</span>
-        </a>
-    </p>
-    <p class="control">
-        <a href="/test-results/{{ test.id }}" class="button is-info">
+            <span>Редактировать</span>
+          </a>
+          <a href="/test-results/{{ test.id }}" class="button is-info mr-2">
             <span class="icon">
-                <i class="fas fa-chart-bar"></i>
+              <i class="fas fa-chart-bar"></i>
             </span>
             <span>Результаты</span>
-            </a>
-    </p>
-    <p class="control">
-        <a href="/tests" class="button is-light">
+          </a>
+          <a href="/tests" class="button is-light">
             <span class="icon">
-                <i class="fas fa-arrow-left"></i>
+              <i class="fas fa-arrow-left"></i>
             </span>
-            <span>Назад к списку</span>
-        </a>
-    </p>
-</div>
-
-    <div class="box">
-        <h2 class="subtitle">Информация о тесте</h2>
-        <div class="content">
-            <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
-            <p><strong>Предмет:</strong> {{ test.course.subject.code }}</p>
-            <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
-            <p><strong>Лимит времени:</strong> {% if test.time_limit %}{{ test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
-            <p><strong>Описание:</strong> {% if test.description %}{{ test.description }}{% else %}<em>Без описания</em>{% endif %}</p>
-            <p><strong>Создан:</strong> {{ test.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+          </a>
         </div>
+      </div>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="notification {{ message.category }}">
+        {{ message.text }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="columns">
+    <div class="column is-4">
+      <div class="box has-shadow mb-4">
+        <h3 class="title is-5 mb-4">
+          <i class="fas fa-info-circle mr-2"></i>
+          Информация
+        </h3>
+        <div class="content is-small">
+          <p>
+            <strong>Курс:</strong><br>
+            <span class="tag is-info is-light">{{ test.course.subject.title }}</span>
+          </p>
+          <p>
+            <strong>Код предмета:</strong><br>
+            {{ test.course.subject.code }}
+          </p>
+          <p>
+            <strong>Максимальный балл:</strong><br>
+            <span class="tag is-warning is-light">{{ test.max_score }}</span>
+          </p>
+          <p>
+            <strong>Лимит времени:</strong><br>
+            {% if test.time_limit %}
+              {{ test.time_limit }} мин.
+            {% else %}
+              <em>Без ограничений</em>
+            {% endif %}
+          </p>
+          <p>
+            <strong>Описание:</strong><br>
+            {% if test.description %}
+              {{ test.description }}
+            {% else %}
+              <em class="has-text-grey">Без описания</em>
+            {% endif %}
+          </p>
+          <p>
+            <strong>Создан:</strong><br>
+            {{ test.created_at.strftime('%d.%m.%Y %H:%M') }}
+          </p>
+        </div>
+      </div>
+
+      <div class="box has-shadow">
+        <h3 class="title is-5 mb-4">
+          <i class="fas fa-chart-pie mr-2"></i>
+          Статистика
+        </h3>
+        <div class="content is-small">
+          <p>
+            <strong>Всего попыток:</strong><br>
+            <span class="tag is-primary is-light">{{ test.results|length }}</span>
+          </p>
+          <p>
+            <strong>Средний балл:</strong><br>
+            {% if test.results %}
+              <span class="tag is-success is-light">
+                {{ "%.2f"|format((test.results|map(attribute='score')|sum) / test.results|length) }} / {{ test.max_score }}
+              </span>
+            {% else %}
+              <em class="has-text-grey">Нет данных</em>
+            {% endif %}
+          </p>
+          <p>
+            <strong>Проходной балл:</strong><br>
+            {{ (test.max_score * 0.6)|round }} / {{ test.max_score }}
+          </p>
+          <p>
+            <strong>Успешность:</strong><br>
+            {% if test.results %}
+              <span class="tag is-info is-light">
+                {{ "%.1f"|format((test.results|map(attribute='passed')|select('==', True)|list|length / test.results|length) * 100) }}%
+              </span>
+            {% else %}
+              <em class="has-text-grey">Нет данных</em>
+            {% endif %}
+          </p>
+        </div>
+      </div>
     </div>
 
-    <div class="box">
-        <h2 class="subtitle">Вопросы теста ({{ questions|length }})</h2>
+    <div class="column is-8">
+      <div class="box has-shadow">
+        <h2 class="title is-4 mb-4">
+          <i class="fas fa-list-check mr-2"></i>
+          Вопросы теста ({{ questions|length }})
+        </h2>
         {% if questions %}
-            <div class="table-container">
-                <table class="table is-striped">
-                    <thead>
-                        <tr>
-                            <th>№</th>
-                            <th>Тип</th>
-                            <th>Вопрос</th>
-                            <th>Баллы</th>
-                            <th>Правильный ответ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for question in questions %}
-                        <tr>
-                            <td>{{ question.order }}</td>
-                            <td>
-                                {% if question.type == 'text' %}
-                                    <span class="tag is-info">Текст</span>
-                                {% elif question.type == 'single_choice' %}
-                                    <span class="tag is-primary">Один вариант</span>
-                                {% elif question.type == 'multiple_choice' %}
-                                    <span class="tag is-success">Несколько вариантов</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ question.text }}</td>
-                            <td>{{ question.points }}</td>
-                            <td>
-                                {% if question.type == 'text' %}
-                                    {{ question.correct_answer }}
-                                {% elif question.type == 'single_choice' %}
-                                    Вариант {{ question.correct_answer }}
-                                {% elif question.type == 'multiple_choice' %}
-                                    Варианты {{ question.correct_answer }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+          <div class="table-container">
+            <table class="table is-fullwidth is-striped">
+              <thead>
+                <tr>
+                  <th colspan="1">№</th>
+                  <th>Тип</th>
+                  <th>Вопрос</th>
+                  <th>Баллы</th>
+                  <th>Ответ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for question in questions %}
+                <tr>
+                  <td><strong>{{ question.order }}</strong></td>
+                  <td>
+                    {% if question.type == 'text' %}
+                      <span class="tag is-info is-light">Текст</span>
+                    {% elif question.type == 'single_choice' %}
+                      <span class="tag is-primary is-light">Один вариант</span>
+                    {% elif question.type == 'multiple_choice' %}
+                      <span class="tag is-success is-light">Несколько</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ question.text }}</td>
+                  <td>
+                    <span class="tag is-warning is-light">{{ question.points }}</span>
+                  </td>
+                  <td>
+                    {% if question.type == 'text' %}
+                      <code>{{ question.correct_answer }}</code>
+                    {% elif question.type == 'single_choice' %}
+                      Вариант {{ question.correct_answer }}
+                    {% elif question.type == 'multiple_choice' %}
+                      Варианты {{ question.correct_answer }}
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         {% else %}
-            <p class="has-text-grey">Вопросы еще не добавлены</p>
+          <div class="notification is-light">
+            <i class="fas fa-info-circle mr-2"></i>
+            Вопросы еще не добавлены
+          </div>
         {% endif %}
+      </div>
     </div>
-
-    <div class="box">
-        <h2 class="subtitle">Статистика</h2>
-        <div class="content">
-            <p><strong>Всего попыток:</strong> {{ test.results|length }}</p>
-            <p><strong>Средний балл:</strong> 
-                {% if test.results %}
-                    {{ "%.2f"|format((test.results|map(attribute='score')|sum) / test.results|length) }} из {{ test.max_score }}
-                {% else %}
-                    Нет данных
-                {% endif %}
-            </p>
-            <p><strong>Проходной балл:</strong> {{ (test.max_score * 0.6)|round }} из {{ test.max_score }}</p>
-            <p><strong>Успешность:</strong> 
-                {% if test.results %}
-                    {{ "%.1f"|format((test.results|map(attribute='passed')|select('==', True)|list|length / test.results|length) * 100) }}%
-                {% else %}
-                    Нет данных
-                {% endif %}
-            </p>
-        </div>
-    </div>
-
-    <div class="field is-grouped">
-        <p class="control">
-            <a href="/tests/{{ test.id }}/edit" class="button is-warning">
-                <span class="icon">
-                    <i class="fas fa-edit"></i>
-                </span>
-                <span>Редактировать тест</span>
-            </a>
-        </p>
-        <p class="control">
-            <a href="/tests" class="button is-light">
-                <span class="icon">
-                    <i class="fas fa-arrow-left"></i>
-                </span>
-                <span>Назад к списку</span>
-            </a>
-        </p>
-    </div>
+  </div>
 </div>
 {% endblock %}
