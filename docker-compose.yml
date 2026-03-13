@@ -25,6 +25,8 @@ services:
       - ./static:/app/static
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     environment:
       DATABASE_URL: postgresql+psycopg2://postgres:zxc011@db:5432/university
       PYTHONPATH: /app
@@ -33,6 +35,11 @@ services:
         condition: service_healthy
     networks:
       - university-net
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
+    restart: on-failure
 
 volumes:
   postgres_data:
