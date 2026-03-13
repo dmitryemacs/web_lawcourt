@@ -6,25 +6,8 @@
   <title>Регистрация</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/modern.css">
   <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .register-container { 
-      max-width: 500px; 
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
     .role-selector {
       display: flex;
       gap: 1rem;
@@ -33,38 +16,71 @@
     .role-card {
       flex: 1;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: var(--transition);
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 2px solid var(--color-border);
+      overflow: hidden;
     }
     .role-card:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: var(--shadow-md);
+      border-color: var(--color-primary);
     }
     .role-card.selected {
-      border-color: #3273dc;
-      background-color: #f0f8ff;
+      border-color: var(--color-primary);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+      box-shadow: var(--shadow-md);
     }
     .role-card input[type="radio"] {
       display: none;
     }
+    .role-card-content {
+      padding: 1.5rem 1rem;
+      text-align: center;
+    }
+    .role-card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.75rem;
+      background: var(--color-primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .role-card.selected .role-card-icon {
+      color: var(--color-primary);
+    }
+    .role-card-title {
+      font-weight: 700;
+      color: var(--color-text-dark);
+      margin-bottom: 0.25rem;
+    }
+    .role-card-desc {
+      font-size: 0.85rem;
+      color: var(--color-text-light);
+    }
   </style>
 </head>
 <body>
-<section class="section">
+<section class="section is-main">
   <div class="container">
     <!-- Шапка -->
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="/">
-          <i class="fas fa-university mr-2"></i>
-          <strong>Университетская система</strong>
+          <i class="fas fa-building mr-2"></i>
+          <strong>Образовательная платформа</strong>
         </a>
       </div>
     </nav>
 
     <!-- Форма регистрации -->
-    <div class="register-container">
+    <div class="form-card">
+      <div class="has-text-centered mb-4">
+        <i class="fas fa-user-plus" style="font-size: 2.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+      </div>
       <h1 class="title has-text-centered">Регистрация</h1>
-      <p class="subtitle has-text-centered has-text-grey">Выберите тип аккаунта и заполните данные</p>
+      <p class="subtitle has-text-centered has-text-grey" style="margin-bottom: 2rem;">Выберите тип аккаунта и заполните данные</p>
       
       {% if messages %}
         <div class="notification is-danger">
@@ -80,20 +96,20 @@
         <div class="field">
           <label class="label">Тип аккаунта</label>
           <div class="role-selector">
-            <label class="card role-card {{ 'selected' if role == 'student' or not role else '' }}">
+            <label class="role-card {{ 'selected' if role == 'student' or not role else '' }}">
               <input type="radio" name="role" value="student" {{ 'checked' if role == 'student' or not role else '' }} required>
-              <div class="card-content has-text-centered">
-                <i class="fas fa-user-graduate fa-2x has-text-primary mb-2"></i>
-                <p class="has-text-weight-bold">Студент</p>
-                <p class="is-size-7 has-text-grey">Для учащихся</p>
+              <div class="role-card-content">
+                <i class="fas fa-user-graduate role-card-icon"></i>
+                <p class="role-card-title">Студент</p>
+                <p class="role-card-desc">Для учащихся</p>
               </div>
             </label>
-            <label class="card role-card {{ 'selected' if role == 'teacher' else '' }}">
+            <label class="role-card {{ 'selected' if role == 'teacher' else '' }}">
               <input type="radio" name="role" value="teacher" {{ 'checked' if role == 'teacher' else '' }} required>
-              <div class="card-content has-text-centered">
-                <i class="fas fa-chalkboard-teacher fa-2x has-text-success mb-2"></i>
-                <p class="has-text-weight-bold">Преподаватель</p>
-                <p class="is-size-7 has-text-grey">Для преподавателей</p>
+              <div class="role-card-content">
+                <i class="fas fa-chalkboard-teacher role-card-icon"></i>
+                <p class="role-card-title">Преподаватель</p>
+                <p class="role-card-desc">Для преподавателей</p>
               </div>
             </label>
           </div>
@@ -102,7 +118,7 @@
         <!-- Общие поля -->
         <div class="field">
           <label class="label">Имя</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="text" 
@@ -111,12 +127,15 @@
               value="{{ first_name or '' }}"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-user"></i>
+            </span>
           </div>
         </div>
 
         <div class="field">
           <label class="label">Фамилия</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="text" 
@@ -125,20 +144,26 @@
               value="{{ last_name or '' }}"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-user"></i>
+            </span>
           </div>
         </div>
 
         <div class="field">
           <label class="label">Email</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="email" 
               name="email" 
-              placeholder="ivan.petrov@university.ru"
+              placeholder="ivan.petrov@example.org"
               value="{{ email or '' }}"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-envelope"></i>
+            </span>
           </div>
         </div>
 
@@ -148,7 +173,7 @@
             <label class="label">Группа</label>
             <div class="control">
               <div class="select is-fullwidth">
-                <select name="group_id" required>
+                <select name="group_id">
                   <option value="">Выберите группу</option>
                   {% for group in groups %}
                     <option value="{{ group.id }}" {{ 'selected' if group_id == group.id else '' }}>
@@ -172,7 +197,6 @@
                 name="access_code" 
                 placeholder="Введите код доступа"
                 value="{{ access_code or '' }}"
-                required
               >
             </div>
             <p class="help">Код доступа предоставляется администратором</p>
@@ -192,10 +216,13 @@
       <hr class="my-4">
 
       <div class="has-text-centered">
-        <p class="has-text-grey">
-          Уже есть аккаунт? 
-          <a href="/login" class="has-text-primary">Войти как студент</a> | 
-          <a href="/teacher-login" class="has-text-success">Войти как преподаватель</a>
+        <p class="has-text-grey" style="margin-bottom: 1rem;">
+          <i class="fas fa-info-circle mr-1"></i>
+          Уже есть аккаунт?
+        </p>
+        <p class="is-size-7">
+          <a href="/login" class="has-text-primary">Вход как студент</a> • 
+          <a href="/teacher-login" class="has-text-info">Вход как преподаватель</a>
         </p>
       </div>
     </div>
