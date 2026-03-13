@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель судьи</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/modern.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='judicial.css') }}">
+    <style>
+        body { padding: 20px; }
+        .ai-chat-demo { height: 320px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-9">
+                <h1 class="title">Панель судьи</h1>
+                
+                <div class="box">
+                    <h2 class="subtitle">Создать дело</h2>
+                    <form id="create-case-form">
+                        <div class="field">
+                            <label class="label">Номер дела</label>
+                            <div class="control">
+                                <input class="input" type="text" name="case_number" placeholder="Напр. 2024-0001" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Название дела</label>
+                            <div class="control">
+                                <input class="input" type="text" name="title" placeholder="Название" required>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Тип дела</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="case_type">
+                                        <option>Гражданское</option>
+                                        <option>Уголовное</option>
+                                        <option>Административное</option>
+                                        <option>Трудовое</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Стороны</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" name="parties" placeholder="Истец vs Ответчик" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-users"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Судья</label>
+                            <div class="control">
+                                <div class="select is-fullwidth">
+                                    <select name="judge_id" required>
+                                        <option value="">Выберите судью</option>
+                                        {% for teacher in teachers %}
+                                            <option value="{{ teacher.id }}">{{ teacher.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Секретарь</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" name="secretary" placeholder="ФИО секретаря">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">Дата и время слушания</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="datetime-local" name="next_hearing" required>
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <label class="checkbox">
+                                    <input type="checkbox" name="is_video">
+                                    <i class="fas fa-video mr-2"></i>
+                                    Видеоконференция
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-primary is-medium" type="submit">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Создать дело
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="box">
+                    <h2 class="subtitle">Предстоящие слушания</h2>
+                    <table class="table is-fullwidth">
+                        <thead>
+                            <tr>
+                                <th>Номер дела</th>
+                                <th>Название</th>
+                                <th>Стороны</th>
+                                <th>Слушание</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hearings-tbody">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="box">
+                    <h2 class="subtitle">Мои дела</h2>
+                    <div id="assigned-list"></div>
+                </div>
+            </div>
+
+            <div class="column is-3">
+                <div class="box ai-chat-demo">
+                    <h3 class="subtitle is-5">AI Ассистент</h3>
+                    <div id="chat-messages" style="height: 260px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 10px;"></div>
+                    <form id="chat-form" style="display: flex; gap: 5px;">
+                        <input type="text" id="chat-input" class="input" placeholder="Вопрос..." style="flex: 1;">
+                        <button type="submit" class="button is-info is-small">Отправить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', path='judicial.js') }}"></script>
+    <script>
+        // Initialize AJAX polling
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchCases();
+            setInterval(fetchCases, 5000);
+        });
+    </script>
+</body>
+</html>
