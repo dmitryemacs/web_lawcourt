@@ -6,49 +6,36 @@
   <title>Вход преподавателя</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .login-container { 
-      max-width: 400px; 
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
-  </style>
+  <link rel="stylesheet" href="/static/modern.css">
 </head>
 <body>
-<section class="section">
+<section class="section is-main">
   <div class="container">
     <!-- Шапка -->
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="/">
-          <i class="fas fa-university mr-2"></i>
-          <strong>Университетская система</strong>
+          <i class="fas fa-building mr-2"></i>
+          <strong>Образовательная платформа</strong>
         </a>
       </div>
     </nav>
 
     <!-- Форма входа -->
-    <div class="login-container">
+    <div class="form-card">
+      <div class="has-text-centered mb-4">
+        <i class="fas fa-chalkboard-teacher" style="font-size: 2.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+      </div>
       <h1 class="title has-text-centered">Вход преподавателя</h1>
+      <p class="subtitle has-text-centered has-text-grey" style="margin-bottom: 2rem;">
+        Введите ваши учетные данные для входа
+      </p>
       
       {% if messages %}
         <div class="notification is-danger">
           <button class="delete"></button>
           {% for message in messages %}
-            <p>{{ message.text }}</p>
+            <p><i class="fas fa-exclamation-circle mr-2"></i>{{ message.text }}</p>
           {% endfor %}
         </div>
       {% endif %}
@@ -56,20 +43,23 @@
       <form method="post" action="/teacher-login">
         <div class="field">
           <label class="label">Email преподавателя</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="email" 
               name="email" 
-              placeholder="teacher@university.ru"
+              placeholder="teacher@example.org"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-envelope"></i>
+            </span>
           </div>
         </div>
 
         <div class="field">
           <label class="label">Код доступа</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="password" 
@@ -77,15 +67,18 @@
               placeholder="Введите код доступа"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-lock"></i>
+            </span>
           </div>
-          <p class="help">Введите ваш код доступа для входа в систему как преподаватель</p>
+          <p class="help">Код доступа предоставляется администратором</p>
         </div>
 
-        <div class="field">
+        <div class="field mt-4">
           <div class="control">
-            <button type="submit" class="button is-success is-fullwidth">
+            <button type="submit" class="button is-success is-fullwidth is-medium">
               <i class="fas fa-chalkboard-teacher mr-2"></i>
-              Войти как преподаватель
+              Войти в систему
             </button>
           </div>
         </div>
@@ -94,10 +87,13 @@
       <hr class="my-4">
 
       <div class="has-text-centered">
-        <a href="/login" class="has-text-primary">
-          <i class="fas fa-user-graduate mr-1"></i>
-          Вход как студент
-        </a>
+        <p class="has-text-grey" style="margin-bottom: 1rem;">
+          <i class="fas fa-info-circle mr-1"></i>
+          Вход для студентов
+        </p>
+        <p class="is-size-7">
+          <a href="/login" class="has-text-primary">Вход как студент →</a>
+        </p>
       </div>
     </div>
   </div>
