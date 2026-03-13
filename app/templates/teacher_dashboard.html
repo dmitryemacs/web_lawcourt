@@ -6,35 +6,21 @@
   <title>Панель преподавателя</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/static/modern.css">
   <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .container { 
-      max-width: 1200px; 
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
-    .card {
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
-    .course-card:hover {
-      transform: translateY(-2px);
-      transition: transform 0.2s ease-in-out;
-    }
     .teacher-info {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: var(--color-primary-gradient);
       color: white;
-      border-radius: 8px;
-      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      padding: 2rem;
       margin-bottom: 2rem;
+      box-shadow: var(--shadow-lg);
+    }
+    .teacher-info .title {
+      color: white !important;
+    }
+    .teacher-info .subtitle {
+      color: rgba(255, 255, 255, 0.9) !important;
     }
   </style>
 </head>
@@ -93,9 +79,9 @@
         </div>
         <div class="column is-narrow">
           <div class="has-text-right">
-            <p class="has-text-white">
+              <p class="has-text-white">
               <i class="fas fa-envelope mr-2"></i>
-              {{ request.session.teacher_name|lower|replace(' ', '.') }}@university.ru
+              {{ request.session.teacher_name|lower|replace(' ', '.') }}@example.org
             </p>
           </div>
         </div>
