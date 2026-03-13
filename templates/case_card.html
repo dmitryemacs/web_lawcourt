@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Карточка дела</title>
+  <link rel="stylesheet" href="/static/judicial.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+</head>
+<body>
+  <div class="container">
+    <a class="button is-light" href="/demo/judge-dashboard">← Назад к панели</a>
+    <h2 class="title is-3">{{ case.case_number or ('Дело ' ~ case_id) }} — {{ case.title }}</h2>
+
+    <div class="columns">
+      <div class="column is-two-thirds">
+        <div class="card">
+          <header class="card-header"><p class="card-header-title">Информация о деле</p></header>
+          <div class="card-content">
+            <p><strong>Тип:</strong> {{ case.case_type }}</p>
+            <p><strong>Стороны:</strong> {{ case.parties }}</p>
+            <p><strong>Статус:</strong> {{ case.status }}</p>
+            <p><strong>Следующее слушание:</strong> {{ case.next_hearing.strftime('%Y-%m-%d %H:%M') if case.next_hearing else 'не назначено' }}, {{ 'Видеослушание' if case.is_video else 'Очно' }}</p>
+            <p><strong>Судья:</strong> {{ case.judge.first_name ~ ' ' ~ case.judge.last_name if case.judge else 'не назначен' }}</p>
+            <p><strong>Секретарь:</strong> {{ case.secretary or 'не назначен' }}</p>
+          </div>
+        </div>
+
+        <div class="card mt">
+          <header class="card-header"><p class="card-header-title">Документы</p></header>
+          <div class="card-content">
+            <ul>
+              <li><a href="#">Исковое заявление.pdf</a></li>
+              <li><a href="#">Протокол слушания.pdf</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="column">
+        <div class="card">
+          <header class="card-header"><p class="card-header-title">Участники</p></header>
+          <div class="card-content">
+            <p>Судья: ФИО</p>
+            <p>Секретарь: ФИО</p>
+            <p>Адвокат: ФИО</p>
+          </div>
+        </div>
+
+        <div class="card mt">
+          <header class="card-header"><p class="card-header-title">Видеослушание</p></header>
+          <div class="card-content">
+            <p>Запланировано: 2026-03-01 11:00</p>
+            <a class="button is-primary" href="#">Перейти в видеозал</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
