@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="box">
-  <h2 class="subtitle">Группы</h2>
+<div class="container">
+  <div class="box has-shadow mb-4">
+    <h2 class="title has-text-primary">
+      <i class="fas fa-object-group mr-2"></i>
+      Группы
+    </h2>
+  </div>
 
   <div class="mb-4">
     <a href="/" class="button is-light">
@@ -10,55 +15,56 @@
     </a>
   </div>
 
-  {% if groups %}
-  <table class="table is-fullwidth is-striped">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Название</th>
-        <th>Факультет</th>
-        <th>Год поступления</th>
-        <th>Кол-во студентов</th>
-        <th>Кол-во курсов</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for g in groups %}
-      <tr>
-        <td>{{g.id}}</td>
-        <td>
-          <strong>{{g.name}}</strong>
-        </td>
-        <td>
-          {% if g.department %}
-            {{g.department.name}}
-          {% else %}
-            <span class="has-text-grey">Не назначен</span>
-          {% endif %}
-        </td>
-        <td>{{g.intake_year}}</td>
-        <td>
-          <span class="tag is-info">{{g.students|length if g.students else 0}}</span>
-        </td>
-        <td>
-          <span class="tag is-link">{{g.courses|length if g.courses else 0}}</span>
-        </td>
-        <td>
-          <a class="button is-small is-info" href="/courses?group_id={{g.id}}">
-            <i class="fas fa-book mr-1"></i>
-            Курсы
-          </a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="notification is-warning">
-    <i class="fas fa-exclamation-triangle mr-2"></i>
-    Нет групп. Вернитесь на <a href="/">главную страницу</a> чтобы добавить группу.
+  <div class="box has-shadow">
+    {% if groups %}
+    <div class="table-container">
+      <table class="table is-fullwidth is-striped">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Название</th>
+            <th>Факультет</th>
+            <th>Год поступления</th>
+            <th>Кол-во студентов</th>
+            <th>Кол-во курсов</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in groups %}
+          <tr>
+            <td><strong>{{g.id}}</strong></td>
+            <td>
+              <strong>{{g.name}}</strong>
+            </td>
+            <td>
+              {% if g.department %}
+                <span class="tag is-info is-light">{{g.department.name}}</span>
+              {% else %}
+                <span class="tag is-light">Не назначен</span>
+              {% endif %}
+            </td>
+            <td>{{g.intake_year}}</td>
+            <td>
+              <span class="tag is-success is-light">{{g.students|length if g.students else 0}}</span>
+            </td>
+            <td>
+              <span class="tag is-warning is-light">{{g.courses|length if g.courses else 0}}</span>
+            </td>
+            <td>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="notification is-warning">
+      <i class="fas fa-exclamation-triangle mr-2"></i>
+      Нет групп. Вернитесь на <a href="/">главную страницу</a> чтобы добавить группу.
+    </div>
+    {% endif %}
   </div>
-  {% endif %}
 </div>
 {% endblock %}
