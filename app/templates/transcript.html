@@ -1,81 +1,148 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="box">
-  <h2 class="subtitle">Транскрипт: {{student.first_name}} {{student.last_name}}</h2>
-
-  <div class="content">
-    <p><strong>Группа:</strong> {{student.group.name if student.group else 'Не назначена'}}</p>
-    <p><strong>Email:</strong> {{student.email or '-'}}</p>
-    <p><strong>Дата поступления:</strong> {{student.enroll_date.strftime('%Y-%m-%d') if student.enroll_date else '-'}}</p>
-  </div>
-
-  <h3 class="subtitle is-4">Оценки</h3>
-  {% if grades %}
-  <table class="table is-fullwidth is-striped">
-    <thead>
-      <tr>
-        <th>Предмет</th>
-        <th>Экзамен</th>
-        <th>Оценка</th>
-        <th>Макс. балл</th>
-        <th>Дата</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for g in grades %}
-      <tr>
-        <td>{{g.exam.course.subject.title}}</td>
-        <td>{{g.exam.name}}</td>
-        <td>
-          <span class="tag {% if g.score >= 60 %}is-success{% else %}is-danger{% endif %}">
-            {{g.score}}
-          </span>
-        </td>
-        <td>{{g.exam.max_score}}</td>
-        <td>{{g.graded_at.strftime('%Y-%m-%d') if g.graded_at else 'Не оценено'}}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-  <div class="notification is-warning">
-    Нет оценок
-  </div>
-  {% endif %}
-
-  <h3 class="subtitle is-4">Поставить оценку</h3>
-  <form method="post" action="/grade">
-    <input type="hidden" name="student_id" value="{{student.id}}"/>
-    <div class="field">
-      <label class="label">Экзамен</label>
-      <div class="control">
-        <div class="select is-fullwidth">
-          <select name="exam_id" required>
-            <option value="">-- выберите экзамен --</option>
-            {% for exam in available_exams %}
-            <option value="{{exam.id}}">
-              {{exam.course.subject.title}} — {{exam.name}} (Макс.: {{exam.max_score}})
-            </option>
-            {% endfor %}
-          </select>
+<div class="container">
+  <div class="box has-shadow mb-4">
+    <div class="level">
+      <div class="level-left">
+        <div class="level-item">
+          <h2 class="title has-text-primary">
+            <i class="fas fa-file-alt mr-2"></i>
+            Транскрипт: {{student.first_name}} {{student.last_name}}
+          </h2>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <a class="button is-light" href="/">
+            <span class="icon">
+              <i class="fas fa-home"></i>
+            </span>
+          </a>
         </div>
       </div>
     </div>
-    <div class="field">
-      <label class="label">Баллы</label>
-      <div class="control">
-        <input class="input" name="score" type="number" step="0.01" min="0" max="100" placeholder="0-100" required/>
-      </div>
-    </div>
-    <div class="field">
-      <div class="control">
-        <button class="button is-primary" type="submit">Поставить оценку</button>
-      </div>
-    </div>
-  </form>
+  </div>
 
-  <div class="mt-4">
-    <a class="button is-light" href="/">На главную</a>
+  <div class="columns">
+    <div class="column is-3">
+      <div class="box has-shadow">
+        <h4 class="title is-5 mb-4">
+          <i class="fas fa-info-circle mr-2"></i>
+          Информация
+        </h4>
+        <div class="content is-small">
+          <p>
+            <strong>Группа:</strong><br>
+            {{student.group.name if student.group else 'Не назначена'}}
+          </p>
+          <p>
+            <strong>Email:</strong><br>
+            {{student.email or '-'}}
+          </p>
+          <p>
+            <strong>Дата поступления:</strong><br>
+            {{student.enroll_date.strftime('%Y-%m-%d') if student.enroll_date else '-'}}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="column is-9">
+      <div class="box has-shadow mb-4">
+        <h3 class="title is-4 mb-4">
+          <i class="fas fa-star mr-2"></i>
+          Оценки
+        </h3>
+        {% if grades %}
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped">
+            <thead>
+              <tr>
+                <th>Предмет</th>
+                <th>Экзамен</th>
+                <th>Оценка</th>
+                <th>Макс. балл</th>
+                <th>Дата</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for g in grades %}
+              <tr>
+                <td>{{g.exam.course.subject.title}}</td>
+                <td>{{g.exam.name}}</td>
+                <td>
+                  <span class="tag {% if g.score >= 60 %}is-success{% else %}is-danger{% endif %}">
+                    {{g.score}}
+                  </span>
+                </td>
+                <td>{{g.exam.max_score}}</td>
+                <td>{{g.graded_at.strftime('%Y-%m-%d') if g.graded_at else 'Не оценено'}}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="notification is-warning is-light">
+          <i class="fas fa-exclamation-triangle mr-2"></i>
+          Нет оценок
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="box has-shadow">
+        <h3 class="title is-4 mb-4">
+          <i class="fas fa-plus mr-2"></i>
+          Поставить оценку
+        </h3>
+        <form method="post" action="/grade">
+          <input type="hidden" name="student_id" value="{{student.id}}"/>
+          <div class="field">
+            <label class="label">
+              <i class="fas fa-graduation-cap mr-2"></i>
+              Экзамен
+            </label>
+            <div class="control has-icons-left">
+              <div class="select is-fullwidth">
+                <select name="exam_id" required>
+                  <option value="">-- выберите экзамен --</option>
+                  {% for exam in available_exams %}
+                  <option value="{{exam.id}}">
+                    {{exam.course.subject.title}} — {{exam.name}} (Макс.: {{exam.max_score}})
+                  </option>
+                  {% endfor %}
+                </select>
+              </div>
+              <span class="icon is-small is-left">
+                <i class="fas fa-book"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="label">
+              <i class="fas fa-list-ol mr-2"></i>
+              Баллы
+            </label>
+            <div class="control has-icons-left">
+              <input class="input" name="score" type="number" step="0.01" min="0" max="100" placeholder="0-100" required/>
+              <span class="icon is-small is-left">
+                <i class="fas fa-plus-circle"></i>
+              </span>
+            </div>
+          </div>
+          <div class="field">
+            <div class="control">
+              <button class="button is-primary" type="submit">
+                <span class="icon">
+                  <i class="fas fa-check"></i>
+                </span>
+                <span>Поставить оценку</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </div>
 {% endblock %}
