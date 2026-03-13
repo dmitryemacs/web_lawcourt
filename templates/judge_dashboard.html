@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Панель судьи — Суд</title>
+  <link rel="stylesheet" href="/static/judicial.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <style>body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }</style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <h1 class="title is-4">Панель судьи</h1>
+      <nav class="header-actions">
+        <a class="button is-light" href="#">Профиль</a>
+        <a class="button is-light" href="#">Выйти</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="container layout">
+    <aside class="sidebar">
+      <ul class="menu">
+        <li class="menu-item active">Дела</li>
+        <li class="menu-item">Расписание</li>
+        <li class="menu-item">Документы</li>
+        <li class="menu-item">Видеослушания</li>
+        <li class="menu-item">Администрирование</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <section class="columns">
+        <div class="column is-two-thirds">
+          <div class="card">
+            <header class="card-header"><p class="card-header-title">Текущие слушания</p></header>
+            <div class="card-content">
+              <table class="table is-fullwidth">
+                <thead><tr><th>Время</th><th>Дело</th><th>Стороны</th><th>Зал</th></tr></thead>
+                <tbody id="hearings-tbody">
+                  {% for c in current_hearings %}
+                  <tr>
+                    <td>{{ c.next_hearing.strftime('%Y-%m-%d %H:%M') if c.next_hearing else '-' }}</td>
+                    <td><a href="/demo/case/{{ c.id }}">{{ c.case_number or ('Дело ' ~ c.id) }}</a></td>
+                    <td>{{ c.parties or '-' }}</td>
+                    <td>{{ 'Видеослушание' if c.is_video else 'Зал' }}</td>
+                  </tr>
+                  {% else %}
+                  <tr><td colspan="4">Нет предстоящих слушаний</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card mt">
+            <header class="card-header"><p class="card-header-title">Список назначенных дел</p></header>
+            <div class="card-content">
+              <div class="case-list" id="assigned-list">
+                {% for c in assigned_cases %}
+                <div class="case-item">
+                  <div class="case-title"><a href="/demo/case/{{ c.id }}">{{ c.case_number or ('Дело ' ~ c.id) }} — {{ c.title }}</a></div>
+                  <div class="case-meta">Следующее слушание: {{ c.next_hearing.strftime('%Y-%m-%d %H:%M') if c.next_hearing else 'не назначено' }}</div>
+                </div>
+                {% else %}
+                <div class="case-item">Нет назначенных дел</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="column">
+          <div class="card">
+            <header class="card-header"><p class="card-header-title">Быстрые действия</p></header>
+            <div class="card-content">
+              <div class="buttons">
+                <form id="create-case-form" method="post" action="/cases/create">
+                  <div class="field">
+                    <input class="input" name="case_number" placeholder="Номер дела" required>
+                  </div>
+                  <div class="field">
+                    <input class="input" name="title" placeholder="Название дела" required>
+                  </div>
+                  <div class="field">
+                    <input class="input" name="parties" placeholder="Стороны (через —)">
+                  </div>
+                  <div class="field">
+                    <div class="control">
+                      <div class="select is-fullwidth">
+                        <select name="judge_id">
+                          <option value="">Выбрать судью (необязательно)</option>
+                          {% for t in teachers %}
+                          <option value="{{ t.id }}">{{ t.first_name }} {{ t.last_name }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="field">
+                    <input class="input" name="secretary" placeholder="Секретарь">
+                  </div>
+                  <div class="field">
+                    <input class="input" name="next_hearing" placeholder="Следующее слушание (ISO, напр. 2026-03-01T09:00)">
+                  </div>
+                  <div class="field">
+                    <label class="checkbox"><input type="checkbox" name="is_video" value="1"> Видеослушание</label>
+                  </div>
+                  <div class="field"><button class="button is-primary" type="submit">Добавить дело</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mt ai-chat-demo">
+            <header class="card-header"><p class="card-header-title">AI-помощник</p></header>
+            <div class="card-content">
+              <div class="ai-chat">
+                <div class="messages">
+                  <div class="msg user">Как подготовиться к дело №1?</div>
+                  <div class="msg bot">Рекомендации: подготовить ходатайства, документы...</div>
+                </div>
+                <textarea class="chat-input" placeholder="Введите сообщение..."></textarea>
+                <div class="chat-actions"><button class="button is-primary">Отправить</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/judicial.js"></script>
+</body>
+</html>
