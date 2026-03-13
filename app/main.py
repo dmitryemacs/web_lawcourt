@@ -10,9 +10,11 @@ import os
 import uvicorn
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
+import logging
+import asyncio
 
 from database import get_db, engine
-from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department, Test, Question, TestResult, Answer
+from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department, Test, Question, TestResult, Answer, Case
 
 # Система уведомлений
 class Message:
@@ -22,7 +24,7 @@ class Message:
 
 def get_messages(request: Request) -> List[Message]:
     """Получить уведомления из сессии"""
-    raw = request.session.get("messages", [])
+    raw = request.session.pop("messages", [])
     return [Message(m.get("text", ""), m.get("category", "is-info")) for m in raw]
 
 def add_message(request: Request, text: str, category: str = "is-info"):
@@ -35,7 +37,7 @@ def clear_messages(request: Request):
     """Очистить уведомления"""
     request.session.pop("messages", None)
 
-app = FastAPI(title="University App")
+app = FastAPI(title="Learning Platform")
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key-change-in-production")
 
 # Функция ожидания подключения к базе данных
@@ -68,6 +70,13 @@ else:
 
 # Настройка Jinja2 шаблонов
 templates = Jinja2Templates(directory="templates")
+# Expose templates on app so tests or external scripts can set directory if needed
+app.templates = templates
+# Make `get_messages` available inside Jinja templates as a global function
+templates.env.globals["get_messages"] = get_messages
+
+# Configure basic logging for the app (can be overridden by environment)
+logging.basicConfig(level=logging.INFO)
 
 # Обслуживание статических файлов
 if not os.path.exists("static"):
@@ -104,7 +113,6 @@ def add_student(
     db.add(student)
     db.commit()
     return RedirectResponse(url='/', status_code=303)
-
 @app.post("/enroll")
 def enroll(
     request: Request,
@@ -965,13 +973,369 @@ def teacher_test_results(request: Request, db: Session = Depends(get_db)):
 
 def require_teacher(request: Request):
     """Декоратор для проверки роли преподавателя"""
-    if not request.session.get("user_role") == "teacher":
+    if request.session.get("user_role") != "teacher":
         raise HTTPException(status_code=403, detail="Access denied - teacher required")
 
 def require_student(request: Request):
     """Декоратор для проверки роли студента"""
     if not request.session.get("student_id"):
         raise HTTPException(status_code=403, detail="Access denied - student required")
+
+
+def require_roles(request: Request, allowed: List[str]):
+    role = request.session.get("user_role")
+    if role not in allowed:
+        raise HTTPException(status_code=403, detail="Access denied - insufficient role")
+
+
+@app.get("/judicial/login", response_class=HTMLResponse)
+def judicial_login_page(request: Request):
+    """Show role selection/login page for judicial system."""
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.post("/judicial/login")
+def judicial_login(
+    request: Request,
+    role: str = Form(...),
+    name: str = Form(None)
+):
+    """Handle demo login - set role and user name in session."""
+    if role not in ["judge", "secretary", "lawyer", "plaintiff", "visitor", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+    
+    # Store in session
+    request.session["user_role"] = role
+    request.session["user_name"] = name or "Пользователь"
+    request.session["logged_in"] = True
+    
+    logging.info(f"User logged in as {role}: {name}")
+    
+    # Redirect to appropriate dashboard
+    if role == "judge":
+        return RedirectResponse(url="/judicial/judge-dashboard", status_code=303)
+    elif role == "secretary":
+        return RedirectResponse(url="/judicial/secretary-dashboard", status_code=303)
+    else:
+        return RedirectResponse(url="/judicial/", status_code=303)
+
+
+@app.get("/judicial/logout")
+def judicial_logout(request: Request):
+    """Clear session and redirect to login."""
+    request.session.clear()
+    return RedirectResponse(url="/judicial/login", status_code=303)
+
+
+@app.get("/judicial/", response_class=HTMLResponse)
+def judicial_home(request: Request):
+    """Main page for judicial system."""
+    if not request.session.get("logged_in"):
+        return RedirectResponse(url="/judicial/login", status_code=303)
+    
+    role = request.session.get("user_role", "unknown")
+    user = request.session.get("user_name", "unknown")
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <title>Судебная система</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <style>body {{ padding: 20px; }}</style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="title">Добро пожаловать, {user}!</h1>
+            <p>Ваша роль: <strong>{role}</strong></p>
+            <div class="buttons">
+                <a class="button is-primary" href="/judicial/judge-dashboard">Панель судьи</a>
+                <a class="button" href="/judicial/logout">Выйти</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.get("/judicial/judge-dashboard", response_class=HTMLResponse)
+def judicial_judge_dashboard(request: Request):
+    """Redirect to demo dashboard with role check."""
+    if not request.session.get("logged_in"):
+        return RedirectResponse(url="/judicial/login", status_code=303)
+    
+    if request.session.get("user_role") not in ["judge", "admin"]:
+        raise HTTPException(status_code=403, detail="Only judges can access this page")
+    
+    return RedirectResponse(url="/demo/judge-dashboard", status_code=303)
+
+
+@app.get("/judicial/secretary-dashboard", response_class=HTMLResponse)
+def judicial_secretary_dashboard(request: Request):
+    """Secretary dashboard (placeholder)."""
+    if not request.session.get("logged_in"):
+        return RedirectResponse(url="/judicial/login", status_code=303)
+    
+    if request.session.get("user_role") not in ["secretary", "admin"]:
+        raise HTTPException(status_code=403, detail="Only secretaries can access this page")
+    
+    html = """
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="utf-8" />
+        <title>Панель секретаря</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+        <style>body { padding: 20px; }</style>
+    </head>
+    <body>
+        <div class="container">
+            <h1 class="title">Панель секретаря</h1>
+            <p>Функциональность в разработке...</p>
+            <a class="button" href="/judicial/logout">Выйти</a>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
+
+@app.post("/ai-chat")
+async def ai_chat(request: Request):
+    """Send user messages to OpenRouter API using the OpenAI SDK.
+
+    Expects JSON: {"message": "user text"}
+    Environment variables control configuration:
+      - OPENROUTER_API_KEY: (required) API key for OpenRouter
+      - OPENROUTER_MODEL: (optional) model name to use (default: openai/gpt-3.5-turbo)
+      - SITE_URL: (optional) your site URL for OpenRouter rankings
+      - SITE_NAME: (optional) your site name for OpenRouter rankings
+      - DISABLE_AI_CHAT: (optional) set to "1" to disable AI chat feature
+    """
+    # Check if AI chat is disabled
+    if os.environ.get("DISABLE_AI_CHAT", "").lower() in ("1", "true", "yes"):
+        raise HTTPException(status_code=503, detail="AI chat feature is disabled")
+    
+    payload = await request.json()
+    user_message = (payload.get("message") or "").strip()
+
+    # Basic validation
+    if not user_message:
+        raise HTTPException(status_code=400, detail="Missing 'message' in request body")
+    if len(user_message) > 2000:
+        raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
+
+    # Require authenticated user (student or teacher)
+    if not (request.session.get("student_id") or request.session.get("teacher_id")):
+        raise HTTPException(status_code=403, detail="Authentication required to use AI chat")
+
+    # Read configuration from environment
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+    site_url = os.environ.get("SITE_URL", "http://localhost:8000")
+    site_name = os.environ.get("SITE_NAME", "Learning Platform")
+
+    if not api_key:
+        raise HTTPException(status_code=503, detail="OpenRouter API key not configured (OPENROUTER_API_KEY)")
+
+    try:
+        from openai import OpenAI, APIError, APIConnectionError, RateLimitError
+    except ImportError:
+        raise HTTPException(status_code=503, detail="OpenAI SDK not installed. Install it with: pip install openai")
+
+    try:
+        # Create OpenAI client configured to use OpenRouter
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key
+        )
+        
+        # Call OpenRouter API via OpenAI SDK
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": user_message}
+            ],
+            temperature=0.7,
+            max_tokens=500,
+            extra_headers={
+                "HTTP-Referer": site_url,
+                "X-Title": site_name
+            }
+        )
+        
+        # Extract reply from response
+        reply = response.choices[0].message.content
+        
+    except APIConnectionError as e:
+        logging.error("Connection error contacting OpenRouter: %s", e)
+        raise HTTPException(status_code=503, detail=f"Cannot connect to OpenRouter: {e}")
+    except RateLimitError as e:
+        logging.error("Rate limit error from OpenRouter: %s", e)
+        raise HTTPException(status_code=429, detail="OpenRouter API rate limit exceeded")
+    except APIError as e:
+        logging.error("OpenRouter API error: %s", e)
+        raise HTTPException(status_code=502, detail=f"OpenRouter API error: {e}")
+    except Exception as e:
+        logging.exception("Unexpected error while calling OpenRouter API: %s", e)
+        raise HTTPException(status_code=503, detail=f"AI Chat unavailable: {e}")
+
+    return {"reply": reply}
+
+@app.get("/demo/judge-dashboard", response_class=HTMLResponse)
+def demo_judge_dashboard(request: Request):
+    """Demo endpoint to preview the judge dashboard wireframe."""
+    # Check authentication from judicial login
+    if not request.session.get("logged_in"):
+        return RedirectResponse(url="/judicial/login", status_code=303)
+    
+    if request.session.get("user_role") not in ["judge", "admin"]:
+        raise HTTPException(status_code=403, detail="Only judges can access this page")
+    
+    # Fetch simple dynamic data from DB for demo
+    db = None
+    try:
+        db = next(get_db())
+        now = datetime.utcnow()
+        hearings = db.execute(select(Case).where(Case.next_hearing != None).order_by(Case.next_hearing)).scalars().all()
+        assigned = db.execute(select(Case).order_by(Case.next_hearing)).scalars().all()
+        teachers = db.execute(select(Teacher)).scalars().all()
+    finally:
+        if db is not None:
+            db.close()
+
+    return templates.TemplateResponse("judge_dashboard.html", {"request": request, "current_hearings": hearings, "assigned_cases": assigned, "teachers": teachers})
+
+
+@app.get("/demo/case/{case_id}", response_class=HTMLResponse)
+def demo_case_card(request: Request, case_id: int):
+    """Demo endpoint to preview a case card wireframe."""
+    db = None
+    case = None
+    try:
+        db = next(get_db())
+        case = db.get(Case, case_id)
+    finally:
+        if db is not None:
+            db.close()
+
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    return templates.TemplateResponse("case_card.html", {"request": request, "case": case, "case_id": case_id})
+
+
+@app.get("/api/cases")
+def api_cases(db: Session = Depends(get_db)):
+    cases = db.execute(select(Case).order_by(Case.next_hearing)).scalars().all()
+    out = []
+    for c in cases:
+        out.append({
+            "id": c.id,
+            "case_number": c.case_number,
+            "title": c.title,
+            "parties": c.parties,
+            "next_hearing": c.next_hearing.isoformat() if c.next_hearing else None,
+            "is_video": bool(c.is_video),
+            "judge": (c.judge.first_name + ' ' + c.judge.last_name) if c.judge else None,
+            "status": c.status,
+        })
+    return {"cases": out}
+
+
+@app.get("/api/teachers")
+def api_teachers(db: Session = Depends(get_db)):
+    teachers = db.execute(select(Teacher)).scalars().all()
+    return {"teachers": [{"id": t.id, "name": f"{t.first_name} {t.last_name}"} for t in teachers]}
+
+
+
+@app.post("/cases/create")
+def create_case(request: Request,
+                case_number: str = Form(...),
+                title: str = Form(...),
+                parties: str = Form(None),
+                next_hearing: str = Form(None),
+                is_video: str = Form(None),
+                judge_id: int = Form(None),
+                secretary: str = Form(None),
+                db: Session = Depends(get_db)):
+    """Create a case (simple form handler for demo)."""
+    # role check: only judge, secretary, admin can create
+    require_roles(request, ["judge", "secretary", "admin"])
+    try:
+        ch = None
+        if next_hearing:
+            try:
+                ch = datetime.fromisoformat(next_hearing)
+            except Exception:
+                ch = None
+
+        case = Case(
+            case_number=case_number,
+            title=title,
+            parties=parties or "",
+            next_hearing=ch,
+            is_video=bool(is_video),
+            judge_id=judge_id
+        )
+        if secretary:
+            case.secretary = secretary
+        db.add(case)
+        db.commit()
+        db.refresh(case)
+        # if AJAX request return JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"success": True, "id": case.id}
+        return RedirectResponse(url=f"/demo/case/{case.id}", status_code=303)
+    except Exception as e:
+        logging.exception("Failed to create case: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to create case")
+
+
+@app.post("/cases/{case_id}/edit")
+def edit_case(request: Request,
+              case_id: int,
+              title: str = Form(None),
+              parties: str = Form(None),
+              next_hearing: str = Form(None),
+              is_video: str = Form(None),
+              judge_id: int = Form(None),
+              secretary: str = Form(None),
+              status: str = Form(None),
+              db: Session = Depends(get_db)):
+    # only judge/secretary/admin can edit
+    require_roles(request, ["judge", "secretary", "admin"])
+    case = db.get(Case, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    try:
+        if title is not None:
+            case.title = title
+        if parties is not None:
+            case.parties = parties
+        if status is not None:
+            case.status = status
+        if next_hearing:
+            try:
+                case.next_hearing = datetime.fromisoformat(next_hearing)
+            except Exception:
+                pass
+        case.is_video = bool(is_video)
+        if judge_id:
+            case.judge_id = judge_id
+        if secretary is not None:
+            case.secretary = secretary
+        db.add(case)
+        db.commit()
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return {"success": True}
+        return RedirectResponse(url=f"/demo/case/{case.id}", status_code=303)
+    except Exception as e:
+        logging.exception("Failed to edit case: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to edit case")
 
 @app.get("/init-data")
 def init_sample_data(db: Session = Depends(get_db)):
@@ -987,13 +1351,13 @@ def init_sample_data(db: Session = Depends(get_db)):
             first_name="Иван",
             last_name="Петров",
             department_id=dept.id,
-            email="ivan.petrov@university.ru"
+            email="ivan.petrov@example.org"
         )
         teacher2 = Teacher(
             first_name="Мария",
             last_name="Сидорова",
             department_id=dept.id,
-            email="maria.sidorova@university.ru"
+            email="maria.sidorova@example.org"
         )
         db.add_all([teacher1, teacher2])
         db.flush()
@@ -1065,35 +1429,35 @@ def init_sample_data(db: Session = Depends(get_db)):
             Student(
                 first_name="Алексей",
                 last_name="Иванов",
-                email="alexey.ivanov@university.ru",
+                email="alexey.ivanov@example.org",
                 group_id=group1.id,
                 enroll_date=datetime.now() - timedelta(days=365)
             ),
             Student(
                 first_name="Екатерина",
                 last_name="Смирнова",
-                email="ekaterina.smirnova@university.ru",
+                email="ekaterina.smirnova@example.org",
                 group_id=group1.id,
                 enroll_date=datetime.now() - timedelta(days=360)
             ),
             Student(
                 first_name="Дмитрий",
                 last_name="Кузнецов",
-                email="dmitry.kuznetsov@university.ru",
+                email="dmitry.kuznetsov@example.org",
                 group_id=group1.id,
                 enroll_date=datetime.now() - timedelta(days=355)
             ),
             Student(
                 first_name="Ольга",
                 last_name="Попова",
-                email="olga.popova@university.ru",
+                email="olga.popova@example.org",
                 group_id=group2.id,
                 enroll_date=datetime.now() - timedelta(days=730)
             ),
             Student(
                 first_name="Сергей",
                 last_name="Васильев",
-                email="sergey.vasiliev@university.ru",
+                email="sergey.vasiliev@example.org",
                 group_id=group2.id,
                 enroll_date=datetime.now() - timedelta(days=725)
             )
@@ -1170,6 +1534,10 @@ def init_sample_data(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/law-tests", response_class=HTMLResponse)
+def law_tests():
+    return RedirectResponse(url="/take-test/1", status_code=303)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
