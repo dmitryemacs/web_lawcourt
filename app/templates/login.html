@@ -6,49 +6,37 @@
   <title>Вход в систему</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .login-container { 
-      max-width: 400px; 
-      margin: 0 auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
-  </style>
+  <link rel="stylesheet" href="/static/modern.css">
 </head>
 <body>
-<section class="section">
+<section class="section is-main">
   <div class="container">
     <!-- Шапка -->
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="/">
-          <i class="fas fa-university mr-2"></i>
-          <strong>Университетская система</strong>
+          <i class="fas fa-building mr-2"></i>
+          <strong>Образовательная платформа</strong>
         </a>
       </div>
     </nav>
 
     <!-- Форма входа -->
-    <div class="login-container">
-      <h1 class="title has-text-centered">Вход в систему</h1>
+    <div class="form-card">
+      <div class="has-text-centered mb-4">
+        <i class="fas fa-sign-in-alt" style="font-size: 2.5rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"></i>
+      </div>
+      
+      <h1 class="title has-text-centered">Вход для студентов</h1>
+      <p class="subtitle has-text-centered has-text-grey" style="margin-bottom: 2rem;">
+        Введите ваш email для входа в систему
+      </p>
       
       {% if messages %}
         <div class="notification is-danger">
           <button class="delete"></button>
           {% for message in messages %}
-            <p>{{ message.text }}</p>
+            <p><i class="fas fa-exclamation-circle mr-2"></i>{{ message.text }}</p>
           {% endfor %}
         </div>
       {% endif %}
@@ -56,23 +44,26 @@
       <form method="post" action="/login">
         <div class="field">
           <label class="label">Email студента</label>
-          <div class="control">
+          <div class="control has-icons-left">
             <input 
               class="input" 
               type="email" 
               name="email" 
-              placeholder="student@university.ru"
+              placeholder="student@example.org"
               required
             >
+            <span class="icon is-small is-left">
+              <i class="fas fa-envelope"></i>
+            </span>
           </div>
-          <p class="help">Введите ваш email для входа в систему как студент</p>
+          <p class="help">Введите email вашего студенческого аккаунта</p>
         </div>
 
-        <div class="field">
+        <div class="field mt-4">
           <div class="control">
-            <button type="submit" class="button is-primary is-fullwidth">
+            <button type="submit" class="button is-primary is-fullwidth is-medium">
               <i class="fas fa-sign-in-alt mr-2"></i>
-              Войти как студент
+              Войти в систему
             </button>
           </div>
         </div>
@@ -81,9 +72,12 @@
       <hr class="my-4">
 
       <div class="has-text-centered">
-        <p class="has-text-grey">
+        <p class="has-text-grey" style="margin-bottom: 1rem;">
           <i class="fas fa-info-circle mr-1"></i>
-          Только студенты могут входить в систему
+          Вход только для студентов
+        </p>
+        <p class="is-size-7">
+          <a href="/teacher-login" class="has-text-primary">Вход для преподавателей →</a>
         </p>
       </div>
     </div>
@@ -96,8 +90,19 @@ document.addEventListener('DOMContentLoaded', () => {
   (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
     const $notification = $delete.parentNode;
     $delete.addEventListener('click', () => {
-      $notification.parentNode.removeChild($notification);
+      $notification.remove();
     });
+  });
+  
+  // Автоматическое скрытие уведомлений через 5 секунд
+  document.querySelectorAll('.notification').forEach(notification => {
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      notification.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => {
+        notification.remove();
+      }, 300);
+    }, 5000);
   });
 });
 </script>
