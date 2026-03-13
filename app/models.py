@@ -135,3 +135,18 @@ class Department(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
     groups = relationship("Group", back_populates="department")
+
+
+class Case(Base):
+    __tablename__ = "cases"
+    id = Column(Integer, primary_key=True, index=True)
+    case_number = Column(String, unique=True, index=True)
+    title = Column(String, index=True)
+    case_type = Column(String, default="Гражданское")
+    status = Column(String, default="Ожидание")
+    parties = Column(Text)
+    next_hearing = Column(DateTime, nullable=True)
+    is_video = Column(Boolean, default=False)
+    judge_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
+    secretary = Column(String, nullable=True)
+    judge = relationship("Teacher")
