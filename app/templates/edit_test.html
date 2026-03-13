@@ -2,49 +2,67 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="title">Редактирование теста: {{ test.name }}</h1>
+    <div class="box has-shadow mb-4">
+        <div class="level">
+            <div class="level-left">
+                <h1 class="title has-text-primary">
+                    <i class="fas fa-edit mr-2"></i>
+                    {{ test.name }}
+                </h1>
+            </div>
+            <div class="level-right">
+                <div class="buttons">
+                    <a href="/tests/{{ test.id }}" class="button is-info is-light">
+                        <span class="icon">
+                            <i class="fas fa-eye"></i>
+                        </span>
+                        <span>Просмотр</span>
+                    </a>
+                    <a href="/tests" class="button is-light">
+                        <span class="icon">
+                            <i class="fas fa-arrow-left"></i>
+                        </span>
+                        <span>Назад</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if messages %}
         {% for message in messages %}
             <div class="notification {{ message.category }}">
+                <button class="delete"></button>
                 {{ message.text }}
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="field is-grouped">
-        <p class="control">
-            <a href="/tests/{{ test.id }}" class="button is-info">
-                <span class="icon">
-                    <i class="fas fa-eye"></i>
-                </span>
-                <span>Просмотр теста</span>
-            </a>
-        </p>
-        <p class="control">
-            <a href="/tests" class="button is-light">
-                <span class="icon">
-                    <i class="fas fa-arrow-left"></i>
-                </span>
-                <span>Назад к списку</span>
-            </a>
-        </p>
-    </div>
-
-    <div class="box">
-        <h2 class="subtitle">Информация о тесте</h2>
-        <div class="content">
-            <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
-            <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
-            <p><strong>Лимит времени:</strong> {% if test.time_limit %}{{ test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
-            <p><strong>Описание:</strong> {% if test.description %}{{ test.description }}{% else %}<em>Без описания</em>{% endif %}</p>
+    <div class="box has-shadow mb-4">
+        <h2 class="title is-4 mb-4">
+            <i class="fas fa-info-circle mr-2"></i>
+            Информация о тесте
+        </h2>
+        <div class="columns">
+            <div class="column">
+                <p><strong>Курс:</strong> {{ test.course.subject.title }}</p>
+                <p><strong>Максимальный балл:</strong> {{ test.max_score }}</p>
+            </div>
+            <div class="column">
+                <p><strong>Лимит времени:</strong> {% if test.time_limit %}{{ test.time_limit }} мин.{% else %}Без ограничений{% endif %}</p>
+                <p><strong>Описание:</strong> {% if test.description %}{{ test.description }}{% else %}<em>Без описания</em>{% endif %}</p>
+            </div>
         </div>
     </div>
 
-    <div class="box">
-        <h2 class="subtitle">Вопросы теста ({{ questions|length }})</h2>
+    <div class="box has-shadow mb-4">
+        <h2 class="title is-4 mb-4">
+            <i class="fas fa-list mr-2"></i>
+            Вопросы теста ({{ questions|length }})
+        </h2>
         {% if questions %}
             <div class="table-container">
-                <table class="table is-striped">
+                <table class="table is-striped is-fullwidth">
                     <thead>
                         <tr>
                             <th>№</th>
@@ -57,22 +75,30 @@
                     <tbody>
                         {% for question in questions %}
                         <tr>
-                            <td>{{ question.order }}</td>
+                            <td><strong>{{ question.order }}</strong></td>
                             <td>
                                 {% if question.type == 'text' %}
-                                    <span class="tag is-info">Текст</span>
+                                    <span class="tag is-info is-light">Текст</span>
                                 {% elif question.type == 'single_choice' %}
-                                    <span class="tag is-primary">Один вариант</span>
+                                    <span class="tag is-primary is-light">Один вариант</span>
                                 {% elif question.type == 'multiple_choice' %}
-                                    <span class="tag is-success">Несколько вариантов</span>
+                                    <span class="tag is-success is-light">Несколько вариантов</span>
                                 {% endif %}
                             </td>
                             <td>{{ question.text }}</td>
-                            <td>{{ question.points }}</td>
+                            <td>
+                                <span class="tag is-warning is-light">
+                                    {{ question.points }}
+                                </span>
+                            </td>
                             <td>
                                 <div class="buttons are-small">
-                                    <button class="button is-warning" onclick="editQuestion({{ question.id }})">Редактировать</button>
-                                    <button class="button is-danger" onclick="deleteQuestion({{ question.id }})">Удалить</button>
+                                    <button class="button is-warning is-light" onclick="editQuestion({{ question.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="button is-danger is-light" onclick="deleteQuestion({{ question.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -81,24 +107,30 @@
                 </table>
             </div>
         {% else %}
-            <p class="has-text-grey">Вопросы еще не добавлены</p>
+            <div class="notification is-info is-light">
+                <i class="fas fa-info-circle mr-2"></i>
+                Вопросы еще не добавлены. Добавьте первый вопрос ниже.
+            </div>
         {% endif %}
     </div>
 
-    <div class="box">
-        <h2 class="subtitle">Добавить вопрос</h2>
+    <div class="box has-shadow">
+        <h2 class="title is-4 mb-4">
+            <i class="fas fa-plus-circle mr-2"></i>
+            Добавить новый вопрос
+        </h2>
         <form method="post" action="/tests/{{ test.id }}/questions/add">
             <div class="field">
                 <label class="label">Текст вопроса</label>
                 <div class="control">
-                    <textarea class="textarea" name="text" required></textarea>
+                    <textarea class="textarea" name="text" placeholder="Введите текст вопроса..." required></textarea>
                 </div>
             </div>
 
             <div class="field">
                 <label class="label">Тип вопроса</label>
                 <div class="control">
-                    <div class="select">
+                    <div class="select is-fullwidth">
                         <select name="question_type" required onchange="updateOptions(this.value)">
                             <option value="text">Открытый вопрос (текст)</option>
                             <option value="single_choice">Один вариант из списка</option>
@@ -110,34 +142,47 @@
 
             <div id="options-container" style="display: none;">
                 <div class="field">
-                    <label class="label">Варианты ответов (каждый вариант с новой строки)</label>
+                    <label class="label">Варианты ответов</label>
                     <div class="control">
-                        <textarea class="textarea" name="options" placeholder="Вариант 1&#10;Вариант 2&#10;Вариант 3"></textarea>
+                        <textarea class="textarea" name="options" placeholder="Вариант 1&#10;Вариант 2&#10;Вариант 3&#10;(каждый с новой строки)"></textarea>
                     </div>
-                    <p class="help">Для правильных ответов укажите их номера через запятую в поле "Правильный ответ"</p>
+                    <p class="help">Для правильных ответов укажите их номера через запятую в поле ниже</p>
                 </div>
             </div>
 
             <div class="field">
                 <label class="label">Правильный ответ</label>
-                <div class="control">
-                    <input class="input" type="text" name="correct_answer" required placeholder="Для текста - правильный ответ, для выбора - номера вариантов">
+                <div class="control has-icons-left">
+                    <input class="input" type="text" name="correct_answer" placeholder="Текст ответа или номера вариантов (1,2)" required>
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-check"></i>
+                    </span>
                 </div>
+                <p class="help">Для текста - правильный ответ, для выбора - номера вариантов через запятую</p>
             </div>
 
             <div class="field">
                 <label class="label">Баллы за вопрос</label>
-                <div class="control">
+                <div class="control has-icons-left">
                     <input class="input" type="number" name="points" value="1" min="1" max="100">
+                    <span class="icon is-small is-left">
+                        <i class="fas fa-star"></i>
+                    </span>
                 </div>
             </div>
 
-            <div class="field is-grouped">
+            <div class="field is-grouped mt-4">
                 <div class="control">
-                    <button type="submit" class="button is-primary">Добавить вопрос</button>
+                    <button type="submit" class="button is-primary is-medium">
+                        <i class="fas fa-plus mr-2"></i>
+                        Добавить вопрос
+                    </button>
                 </div>
                 <div class="control">
-                    <button type="button" class="button is-light" onclick="toggleOptions()">Отмена</button>
+                    <button type="button" class="button is-light is-medium" onclick="resetForm()">
+                        <i class="fas fa-times mr-2"></i>
+                        Очистить
+                    </button>
                 </div>
             </div>
         </form>
@@ -154,25 +199,17 @@ function updateOptions(type) {
     }
 }
 
-function toggleOptions() {
-    const container = document.getElementById('options-container');
-    const select = document.querySelector('select[name="question_type"]');
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        select.value = 'single_choice';
-    } else {
-        container.style.display = 'none';
-        select.value = 'text';
-    }
+function resetForm() {
+    document.querySelector('form').reset();
+    document.getElementById('options-container').style.display = 'none';
 }
 
 function editQuestion(questionId) {
-    // Здесь можно добавить логику редактирования вопроса
     alert('Функция редактирования вопроса будет реализована позже');
 }
+
 function deleteQuestion(questionId) {
     if (confirm('Вы уверены, что хотите удалить этот вопрос?')) {
-        // Здесь можно добавить логику удаления вопроса
         alert('Функция удаления вопроса будет реализована позже');
     }
 }
