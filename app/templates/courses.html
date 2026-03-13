@@ -25,16 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
   <div class="column is-one-third">
     <!-- Форма добавления курса -->
     <div class="box has-shadow">
-      <div class="content">
-        <h3 class="title is-4 has-text-primary">
-          <i class="fas fa-plus mr-2"></i>
-          Добавить курс
-        </h3>
+      <h3 class="title is-4 has-text-primary mb-4">
+        <i class="fas fa-plus mr-2"></i>
+        Добавить курс
+      </h3>
         <form method="post" action="/courses/add">
           <div class="field">
             <label class="label">Предмет</label>
             <div class="control">
-              <div class="select is-fullwidth is-primary">
+              <div class="select is-fullwidth">
                 <select name="subject_id" required>
                   <option value="">-- выберите предмет --</option>
                   {% for subject in subjects %}
@@ -50,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="field">
             <label class="label">Преподаватель</label>
             <div class="control">
-              <div class="select is-fullwidth is-primary">
+              <div class="select is-fullwidth">
                 <select name="teacher_id">
                   <option value="">-- без преподавателя --</option>
                   {% for teacher in teachers %}
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="field">
             <label class="label">Группа</label>
             <div class="control">
-              <div class="select is-fullwidth is-primary">
+              <div class="select is-fullwidth">
                 <select name="group_id">
                   <option value="">-- без группы --</option>
                   {% for group in groups %}
@@ -115,49 +114,47 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Форма добавления преподавателя -->
   <div class="column is-one-third">
     <div class="box has-shadow mt-4">
-      <div class="content">
-        <h3 class="title is-4 has-text-success">
-          <i class="fas fa-chalkboard-teacher mr-2"></i>
-          Добавить преподавателя
-        </h3>
-        <form method="post" action="/teachers/add">
-          <div class="field">
-            <label class="label">Имя</label>
-            <div class="control has-icons-left">
-              <input class="input" name="first_name" placeholder="Иван" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-user"></i>
-              </span>
-            </div>
+      <h3 class="title is-4 has-text-success mb-4">
+        <i class="fas fa-chalkboard-teacher mr-2"></i>
+        Добавить преподавателя
+      </h3>
+      <form method="post" action="/teachers/add">
+        <div class="field">
+          <label class="label">Имя</label>
+          <div class="control has-icons-left">
+            <input class="input" name="first_name" placeholder="Иван" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-user"></i>
+            </span>
           </div>
-          <div class="field">
-            <label class="label">Фамилия</label>
-            <div class="control has-icons-left">
-              <input class="input" name="last_name" placeholder="Петров" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-user"></i>
-              </span>
-            </div>
+        </div>
+        <div class="field">
+          <label class="label">Фамилия</label>
+          <div class="control has-icons-left">
+            <input class="input" name="last_name" placeholder="Петров" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-user"></i>
+            </span>
           </div>
-          <div class="field">
-            <label class="label">Email</label>
-            <div class="control has-icons-left">
-              <input class="input" name="email" type="email" placeholder="teacher@example.com"/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-envelope"></i>
-              </span>
-            </div>
+        </div>
+        <div class="field">
+          <label class="label">Email</label>
+          <div class="control has-icons-left">
+            <input class="input" name="email" type="email" placeholder="teacher@example.com"/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-envelope"></i>
+            </span>
           </div>
-          <div class="field mt-4">
-            <div class="control">
-              <button class="button is-success is-fullwidth is-medium" type="submit">
-                <i class="fas fa-plus mr-2"></i>
-                Добавить преподавателя
-              </button>
-            </div>
+        </div>
+        <div class="field mt-4">
+          <div class="control">
+            <button class="button is-success is-fullwidth is-medium" type="submit">
+              <i class="fas fa-plus mr-2"></i>
+              Добавить преподавателя
+            </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -166,50 +163,68 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="columns mt-4">
   <div class="column is-one-third">
     <div class="box has-shadow">
-      <div class="content">
-        <h3 class="title is-4 has-text-warning">
-          <i class="fas fa-book mr-2"></i>
-          Добавить предмет
-        </h3>
-        <form method="post" action="/subjects/add">
-          <div class="field">
-            <label class="label">Код предмета</label>
-            <div class="control has-icons-left">
-              <input class="input" name="code" placeholder="CS101" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-hashtag"></i>
-              </span>
-            </div>
+      <h3 class="title is-4 has-text-warning mb-4">
+        <i class="fas fa-book mr-2"></i>
+        Добавить предмет
+      </h3>
+      <form method="post" action="/subjects/add">
+        <div class="field">
+          <label class="label">Код предмета</label>
+          <div class="control has-icons-left">
+            <input class="input" name="code" placeholder="CS101" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-hashtag"></i>
+            </span>
           </div>
-          <div class="field">
-            <label class="label">Название</label>
-            <div class="control has-icons-left">
-              <input class="input" name="title" placeholder="Введение в программирование" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-heading"></i>
-              </span>
-            </div>
+        </div>
+        <div class="field">
+          <label class="label">Название</label>
+          <div class="control has-icons-left">
+            <input class="input" name="title" placeholder="Введение в программирование" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-heading"></i>
+            </span>
           </div>
-          <div class="field">
-            <label class="label">Описание</label>
-            <div class="control">
-              <textarea class="textarea" name="description" placeholder="Краткое описание предмета..."></textarea>
-            </div>
+        </div>
+        <div class="field">
+          <label class="label">Описание</label>
+          <div class="control">
+            <textarea class="textarea" name="description" placeholder="Краткое описание предмета..."></textarea>
           </div>
-          <div class="field mt-4">
-            <div class="control">
-              <button class="button is-warning is-fullwidth is-medium" type="submit">
-                <i class="fas fa-plus mr-2"></i>
-                Добавить предмет
-              </button>
-            </div>
+        </div>
+        <div class="field mt-4">
+          <div class="control">
+            <button class="button is-warning is-fullwidth is-medium" type="submit">
+              <i class="fas fa-plus mr-2"></i>
+              Добавить предмет
+            </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
   </div>
 
   <div class="column">
+  <div class="box has-shadow">
+    <div class="level mb-4">
+      <div class="level-left">
+        <h3 class="title is-4">
+          <i class="fas fa-list mr-2"></i>
+          Список курсов
+        </h3>
+      </div>
+      <div class="level-right">
+        <div class="tags has-addons">
+          <span class="tag is-info">
+            <i class="fas fa-book mr-1"></i>
+            Всего
+          </span>
+          <span class="tag is-primary">
+            {{courses|length}}
+          </span>
+        </div>
+      </div>
+    </div>
   <table class="table is-fullwidth is-striped">
     <thead>
       <tr>
@@ -253,6 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <div class="mt-4">
     <a class="button is-light" href="/">На главную</a>
+  </div>
   </div>
   </div>
 </div>

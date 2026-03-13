@@ -2,67 +2,109 @@
 
 {% block content %}
 <div class="container">
-    <h1 class="title">Создание теста</h1>
+    <div class="box has-shadow mb-4">
+        <h1 class="title has-text-primary">
+            <i class="fas fa-plus-circle mr-2"></i>
+            Создание теста
+        </h1>
+    </div>
+
     {% if messages %}
         {% for message in messages %}
             <div class="notification {{ message.category }}">
+                <button class="delete"></button>
                 {{ message.text }}
             </div>
         {% endfor %}
     {% endif %}
 
-    <form method="post" action="/tests/create">
-        <div class="field">
-            <label class="label">Курс</label>
-            <div class="control">
-                <div class="select">
-                    <select name="course_id" required>
-                        {% for course in courses %}
-                        <option value="{{ course.id }}">
-                            {{ course.subject.title }} ({{ course.semester }})
-                        </option>
-                        {% endfor %}
-                    </select>
+    <div class="columns">
+        <div class="column is-two-thirds">
+            <div class="box has-shadow">
+                <form method="post" action="/tests/create">
+                    <div class="field">
+                        <label class="label">Курс</label>
+                        <div class="control">
+                            <div class="select is-fullwidth">
+                                <select name="course_id" required>
+                                    {% for course in courses %}
+                                    <option value="{{ course.id }}">
+                                        {{ course.subject.title }} ({{ course.semester }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Название теста</label>
+                        <div class="control has-icons-left">
+                            <input class="input" type="text" name="name" placeholder="Введите название теста" required>
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-heading"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Описание (опционально)</label>
+                        <div class="control">
+                            <textarea class="textarea" name="description" placeholder="Краткое описание теста..."></textarea>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Максимальный балл</label>
+                        <div class="control has-icons-left">
+                            <input class="input" type="number" name="max_score" value="100" min="1" max="1000" required>
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-star"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Лимит времени (минуты, опционально)</label>
+                        <div class="control has-icons-left">
+                            <input class="input" type="number" name="time_limit" placeholder="Не ограничено" min="1">
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-hourglass-end"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="field is-grouped mt-4">
+                        <div class="control">
+                            <button type="submit" class="button is-primary is-medium">
+                                <i class="fas fa-check mr-2"></i>
+                                Создать тест
+                            </button>
+                        </div>
+                        <div class="control">
+                            <a href="/tests" class="button is-light is-medium">
+                                <i class="fas fa-times mr-2"></i>
+                                Отмена
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="column">
+            <div class="box has-shadow">
+                <h3 class="title is-5 has-text-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Справка
+                </h3>
+                <div class="content is-size-7">
+                    <p><strong>Название теста:</strong> Четкое и описательное название</p>
+                    <p><strong>Максимальный балл:</strong> Обычно 100 баллов</p>
+                    <p><strong>Лимит времени:</strong> Оставьте пустым для неограниченного времени</p>
                 </div>
             </div>
         </div>
-
-        <div class="field">
-            <label class="label">Название теста</label>
-            <div class="control">
-                <input class="input" type="text" name="name" required>
-            </div>
-        </div>
-
-        <div class="field">
-            <label class="label">Описание (опционально)</label>
-            <div class="control">
-                <textarea class="textarea" name="description"></textarea>
-            </div>
-        </div>
-
-        <div class="field">
-            <label class="label">Максимальный балл</label>
-            <div class="control">
-                <input class="input" type="number" name="max_score" value="100" min="1" max="1000">
-            </div>
-        </div>
-
-        <div class="field">
-            <label class="label">Лимит времени (минуты, опционально)</label>
-            <div class="control">
-                <input class="input" type="number" name="time_limit" min="1">
-            </div>
-        </div>
-
-        <div class="field is-grouped">
-            <div class="control">
-                <button type="submit" class="button is-primary">Создать тест</button>
-            </div>
-            <div class="control">
-                <a href="/tests" class="button is-light">Отмена</a>
-            </div>
-        </div>
-    </form>
+    </div>
 </div>
 {% endblock %}
