@@ -3,51 +3,10 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>University System</title>
+  <title>Learning Platform</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    body { 
-      padding-top: 20px;
-      background-color: #f5f5f5;
-      min-height: 100vh;
-    }
-    .container { 
-      max-width: 1200px; 
-    }
-    .navbar {
-      border-radius: 8px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 3px rgba(10,10,10,.1);
-    }
-    .footer {
-      margin-top: 40px;
-      padding: 20px 0;
-      background-color: #fafafa;
-      border-top: 1px solid #dbdbdb;
-    }
-    .table td, .table th {
-      vertical-align: middle;
-    }
-    .notification {
-      position: fixed;
-      right: 20px;
-      z-index: 1000;
-      max-width: 400px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      animation: slideIn 0.3s ease-in-out;
-    }
-    @keyframes slideIn {
-      from {
-        transform: translateX(450px);
-        opacity: 0;
-      }
-      to {
-        transform: translateX(0);
-        opacity: 1;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="/static/modern.css">
 </head>
 <body>
 <section class="section">
@@ -56,8 +15,8 @@
     <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="navbar-brand">
         <a class="navbar-item" href="/">
-          <i class="fas fa-university mr-2"></i>
-          <strong>Университетская система</strong>
+          <i class="fas fa-building mr-2"></i>
+          <strong>Образовательная платформа</strong>
         </a>
       </div>
 
@@ -119,6 +78,11 @@
                 <i class="fas fa-heartbeat mr-2"></i>
                 Состояние системы
               </a>
+              <!-- AI Chat button -->
+              <button id="ai-chat-open" class="button is-info is-light" title="AI Chat">
+                <i class="fas fa-robot mr-2"></i>
+                AI Chat
+              </button>
               
               <!-- Выход из системы -->
               {% if request.session.student_id %}
@@ -157,6 +121,7 @@
     </nav>
 
     <!-- Уведомления -->
+    {% set messages = get_messages(request) %}
     {% if messages %}
       {% for message in messages %}
         <div class="notification {{ message.category }}">
@@ -189,17 +154,20 @@
       </div>
     {% endif %}
 
-    <!-- Контент -->
+    
+
+
+<!-- Контент -->
     {% block content %}{% endblock %}
 
     <!-- Подвал -->
     <footer class="footer">
       <div class="content has-text-centered">
         <p>
-          <strong>University System</strong> by Dmitry Dubnovitskiy
+          <strong>Learning Platform</strong> by Dmitry Dubnovitskiy
         </p>
         <p>
-          <small>Система управления университетом - студенты, курсы, оценки</small>
+          <small>Платформа управления обучением — участники, курсы, результаты</small>
         </p>
       </div>
     </footer>
@@ -255,5 +223,25 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+<link rel="stylesheet" href="/static/chat.css">
+<script src="/static/chat.js"></script>
+
+<!-- AI Chat Modal -->
+<div id="ai-chat-modal" class="modal ai-modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title">AI Chat</p>
+      <button id="ai-chat-close" class="delete" aria-label="close"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="ai-messages" class="ai-messages-container"></div>
+      <form id="ai-chat-form" style="margin-top:12px; display:flex; gap:8px;">
+        <input id="ai-chat-input" class="input" placeholder="Спросите что-нибудь..." />
+        <button class="button is-primary" type="submit">Отправить</button>
+      </form>
+    </section>
+  </div>
+</div>
 </body>
 </html>
