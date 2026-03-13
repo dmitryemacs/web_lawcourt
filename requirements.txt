@@ -6,3 +6,5 @@ jinja2
 python-multipart
 pydantic
 itsdangerous
+httpx>=0.24.0
+openai>=1.0.0
