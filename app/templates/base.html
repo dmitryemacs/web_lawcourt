@@ -3,115 +3,123 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Learning Platform</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <title>Судебный законодатель</title>
+  
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Modern Custom Styles -->
   <link rel="stylesheet" href="/static/modern.css">
 </head>
 <body>
-<section class="section">
-  <div class="container">
-    <!-- Шапка -->
-    <nav class="navbar" role="navigation" aria-label="main navigation">
-      <div class="navbar-brand">
-        <a class="navbar-item" href="/">
-          <i class="fas fa-building mr-2"></i>
-          <strong>Образовательная платформа</strong>
-        </a>
-      </div>
-
-      <div class="navbar-menu">
-        <!-- Общая навигация -->
-        <div class="navbar-start">
-          <!-- Показываем для всех пользователей -->
-          <a class="navbar-item" href="/">
-            <i class="fas fa-users mr-2"></i>
-            Студенты
+  <div class="app-wrapper">
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <div class="navbar-brand">
+          <a class="brand-link" href="/">
+            <i class="fas fa-balance-scale"></i>
+            <span>Судебный законодатель</span>
           </a>
-          <a class="navbar-item" href="/courses">
-            <i class="fas fa-book mr-2"></i>
-            Курсы
-          </a>
-          
-          <!-- Навигация для преподавателей -->
-          {% if request.session.user_role == "teacher" %}
-            <a class="navbar-item" href="/tests">
-              <i class="fas fa-clipboard-list mr-2"></i>
-              Тесты
-            </a>
-            <a class="navbar-item" href="/teacher-dashboard">
-              <i class="fas fa-chalkboard-teacher mr-2"></i>
-              Панель преподавателя
-            </a>
-            <a class="navbar-item" href="/teacher-test-results">
-              <i class="fas fa-chart-bar mr-2"></i>
-              Результаты тестов
-            </a>
-          {% endif %}
-          
-          <!-- Навигация для студентов -->
-          {% if request.session.student_id %}
-            <a class="navbar-item" href="/tests">
-              <i class="fas fa-clipboard-list mr-2"></i>
-              Тесты
-            </a>
-            <a class="navbar-item" href="/groups">
-              <i class="fas fa-user-graduate mr-2"></i>
-              Группы
-            </a>
-          {% endif %}
         </div>
 
-        <div class="navbar-end">
-          <div class="navbar-item">
-            <div class="buttons">
-              <!-- Кнопка для инициализации тестовых данных -->
-              {% if not request.session.student_id and not request.session.user_role %}
-                <a href="/init-data" class="button is-info is-light">
-                  <i class="fas fa-database mr-2"></i>
-                  Инициализация данных
-                </a>
-              {% endif %}
-              
-              <!-- Кнопка для состояния системы -->
-              <a href="/health" class="button is-success is-light">
-                <i class="fas fa-heartbeat mr-2"></i>
-                Состояние системы
+        <div class="navbar-menu">
+          <div class="navbar-start">
+            <a class="navbar-item" href="/">
+              <i class="fas fa-users"></i>
+              <span>Сотрудники</span>
+            </a>
+            <a class="navbar-item" href="/courses">
+              <i class="fas fa-book-open"></i>
+              <span>Курсы</span>
+            </a>
+            <a class="navbar-item" href="/departments">
+              <i class="fas fa-building"></i>
+              <span>Отделы</span>
+            </a>
+            
+            <!-- Judge Navigation -->
+            {% if request.session.user_role == "judge" %}
+              <a class="navbar-item" href="/tests">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Тесты</span>
               </a>
-              <!-- AI Chat button -->
-              <button id="ai-chat-open" class="button is-info is-light" title="AI Chat">
-                <i class="fas fa-robot mr-2"></i>
-                AI Chat
+              <a class="navbar-item" href="/judge-dashboard">
+                <i class="fas fa-gavel"></i>
+                <span>Панель судьи</span>
+              </a>
+              <a class="navbar-item" href="/judge-test-results">
+                <i class="fas fa-chart-line"></i>
+                <span>Результаты</span>
+              </a>
+            {% endif %}
+            
+            <!-- Employee Navigation -->
+            {% if request.session.employee_id %}
+              <a class="navbar-item" href="/tests">
+                <i class="fas fa-clipboard-check"></i>
+                <span>Тесты</span>
+              </a>
+            {% endif %}
+          </div>
+
+          <div class="navbar-end">
+            <div class="navbar-actions">
+              <!-- System Status -->
+              <a href="/health" class="btn btn-success btn-icon" title="Состояние системы">
+                <i class="fas fa-heartbeat"></i>
+              </a>
+              
+              <!-- AI Chat -->
+              <button id="ai-chat-open" class="btn btn-info btn-icon" title="AI Помощник">
+                <i class="fas fa-robot"></i>
               </button>
               
-              <!-- Выход из системы -->
-              {% if request.session.student_id %}
-                <a href="/logout" class="button is-warning is-light">
-                  <i class="fas fa-sign-out-alt mr-2"></i>
-                  Выйти (Студент)
+              <!-- Initialize Data (for demo) -->
+              {% if not request.session.employee_id and not request.session.user_role %}
+                <a href="/init-data" class="btn btn-primary btn-icon" title="Загрузить тестовые данные">
+                  <i class="fas fa-database"></i>
                 </a>
               {% endif %}
               
-              {% if request.session.user_role == "teacher" %}
-                <a href="/teacher-logout" class="button is-warning is-light">
-                  <i class="fas fa-sign-out-alt mr-2"></i>
-                  Выйти (Преподаватель)
+              <!-- Employee Logout -->
+              {% if request.session.employee_id %}
+                <a href="/logout" class="btn btn-warning">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Выйти</span>
                 </a>
               {% endif %}
               
-              <!-- Вход для студентов -->
-              {% if not request.session.student_id and not request.session.user_role %}
-                <a href="/login" class="button is-primary">
-                  <i class="fas fa-sign-in-alt mr-2"></i>
-                  Войти как студент
+              <!-- Judge Logout -->
+              {% if request.session.user_role == "judge" %}
+                <a href="/judge-logout" class="btn btn-warning">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Выйти</span>
                 </a>
               {% endif %}
               
-              <!-- Вход для преподавателей -->
-              {% if not request.session.user_role or request.session.user_role != "teacher" %}
-                <a href="/teacher-login" class="button is-link">
-                  <i class="fas fa-chalkboard-teacher mr-2"></i>
-                  Войти как преподаватель
+              <!-- Employee Login -->
+              {% if not request.session.employee_id and not request.session.user_role %}
+                <a href="/login" class="btn btn-primary">
+                  <i class="fas fa-sign-in-alt"></i>
+                  <span>Войти</span>
+                </a>
+                <a href="/register" class="btn btn-secondary">
+                  <i class="fas fa-user-plus"></i>
+                  <span>Регистрация</span>
+                </a>
+              {% endif %}
+              
+              <!-- Judge Login -->
+              {% if not request.session.user_role or request.session.user_role != "judge" %}
+                <a href="/judge-login" class="btn btn-info">
+                  <i class="fas fa-gavel"></i>
+                  <span>Судья</span>
                 </a>
               {% endif %}
             </div>
@@ -120,128 +128,224 @@
       </div>
     </nav>
 
-    <!-- Уведомления -->
-    {% set messages = get_messages(request) %}
-    {% if messages %}
-      {% for message in messages %}
-        <div class="notification {{ message.category }}">
-          <button class="delete"></button>
-          <strong>{{ message.text }}</strong>
+    <!-- Flash Messages / Notifications -->
+    <div class="container">
+      {% set messages = get_messages(request) %}
+      {% if messages %}
+        <div class="notifications-wrapper">
+          {% for message in messages %}
+            <div class="notification notification-{{ message.category }}">
+              <i class="fas {% if message.category == 'is-success' %}fa-check-circle{% elif message.category == 'is-danger' %}fa-exclamation-circle{% elif message.category == 'is-warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+              <span>{{ message.text }}</span>
+              <button class="notification-close" aria-label="close"></button>
+            </div>
+          {% endfor %}
         </div>
-      {% endfor %}
-    {% endif %}
+      {% endif %}
 
-    <!-- Приветствие пользователя -->
-    {% if request.session.student_name %}
-      <div class="card has-background-info-light">
-        <div class="card-content">
-          <p class="title is-5">
-            <i class="fas fa-user-graduate mr-2"></i>
-            Добро пожаловать, {{ request.session.student_name }}!
+      <!-- User Welcome Banner -->
+      {% if request.session.employee_name %}
+        <div class="welcome-banner welcome-employee">
+          <div class="welcome-content">
+            <div class="welcome-text">
+              <p class="welcome-subtitle">Добро пожаловать обратно!</p>
+              <h2 class="welcome-title">
+                <i class="fas fa-user-tie"></i>
+                {{ request.session.employee_name }}
+              </h2>
+            </div>
+            <div class="welcome-badge">
+              <span class="badge badge-employee">
+                <i class="fas fa-briefcase"></i>
+                Сотрудник
+              </span>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+      
+      {% if request.session.judge_name %}
+        <div class="welcome-banner welcome-judge">
+          <div class="welcome-content">
+            <div class="welcome-text">
+              <p class="welcome-subtitle">Добро пожаловать обратно!</p>
+              <h2 class="welcome-title">
+                <i class="fas fa-gavel"></i>
+                {{ request.session.judge_name }}
+              </h2>
+            </div>
+            <div class="welcome-badge">
+              <span class="badge badge-judge">
+                <i class="fas fa-balance-scale"></i>
+                Судья
+              </span>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Main Content -->
+      <main class="main-content">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Footer -->
+      <footer class="footer">
+        <div class="footer-content">
+          <p class="footer-brand">
+            <strong>Судебный законодатель</strong> — Современная судебная платформа
+          </p>
+          <p class="footer-copyright">
+            <small>Разработано с <i class="fas fa-heart"></i> для качественного правосудия</small>
           </p>
         </div>
-      </div>
-    {% endif %}
-    
-    {% if request.session.teacher_name %}
-      <div class="card has-background-warning-light">
-        <div class="card-content">
-          <p class="title is-5">
-            <i class="fas fa-chalkboard-teacher mr-2"></i>
-            Добро пожаловать, {{ request.session.teacher_name }}!
-          </p>
-        </div>
-      </div>
-    {% endif %}
-
-    
-
-
-<!-- Контент -->
-    {% block content %}{% endblock %}
-
-    <!-- Подвал -->
-    <footer class="footer">
-      <div class="content has-text-centered">
-        <p>
-          <strong>Learning Platform</strong> by Dmitry Dubnovitskiy
-        </p>
-        <p>
-          <small>Платформа управления обучением — участники, курсы, результаты</small>
-        </p>
-      </div>
-    </footer>
+      </footer>
+    </div>
   </div>
-</section>
 
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Функция для позиционирования уведомлений
-  function repositionNotifications() {
-    const notifications = document.querySelectorAll('.notification');
-    let topPosition = 20;
-    
-    notifications.forEach(notification => {
-      notification.style.top = topPosition + 'px';
-      topPosition += notification.offsetHeight + 15; // 15px промежутка
-    });
-  }
-  
-  // Позиционируем уведомления при загрузке
-  repositionNotifications();
-  
-  // Закрытие уведомлений при клике на кнопку delete
-  document.querySelectorAll('.notification .delete').forEach(deleteBtn => {
-    deleteBtn.addEventListener('click', () => {
-      deleteBtn.parentElement.style.opacity = '0';
-      deleteBtn.parentElement.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => {
-        deleteBtn.parentElement.remove();
-        repositionNotifications();
-      }, 300);
-    });
-  });
-  
-  // Автоматическое скрытие уведомлений через 5 секунд
-  document.querySelectorAll('.notification').forEach(notification => {
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      notification.style.transition = 'opacity 0.3s ease';
-      setTimeout(() => {
-        notification.remove();
-        repositionNotifications();
-      }, 300);
-    }, 5000);
-  });
-  
-  // Подсветка активной страницы в навигации
-  const currentPath = window.location.pathname;
-  document.querySelectorAll('.navbar-item').forEach(item => {
-    if (item.getAttribute('href') === currentPath) {
-      item.classList.add('is-active');
-    }
-  });
-});
-</script>
-<link rel="stylesheet" href="/static/chat.css">
-<script src="/static/chat.js"></script>
-
-<!-- AI Chat Modal -->
-<div id="ai-chat-modal" class="modal ai-modal">
-  <div class="modal-background"></div>
-  <div class="modal-card">
-    <header class="modal-card-head">
-      <p class="modal-card-title">AI Chat</p>
-      <button id="ai-chat-close" class="delete" aria-label="close"></button>
-    </header>
-    <section class="modal-card-body">
-      <div id="ai-messages" class="ai-messages-container"></div>
-      <form id="ai-chat-form" style="margin-top:12px; display:flex; gap:8px;">
-        <input id="ai-chat-input" class="input" placeholder="Спросите что-нибудь..." />
-        <button class="button is-primary" type="submit">Отправить</button>
-      </form>
-    </section>
+  <!-- AI Chat Modal -->
+  <div id="ai-chat-modal" class="modal">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <i class="fas fa-robot"></i>
+          AI Помощник
+        </h3>
+        <button id="ai-chat-close" class="modal-close" aria-label="close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="ai-messages" class="chat-messages"></div>
+        <form id="ai-chat-form" class="chat-form">
+          <div class="form-group">
+            <input id="ai-chat-input" class="form-input" placeholder="Задайте вопрос..." autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <button class="btn btn-primary btn-full" type="submit">
+              <i class="fas fa-paper-plane"></i>
+              Отправить
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
-</div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Auto-hide notifications after 5 seconds
+      const notifications = document.querySelectorAll('.notification');
+      notifications.forEach((notification, index) => {
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }, 5000 + (index * 100));
+      });
+
+      // Close notification on button click
+      document.querySelectorAll('.notification-close').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const notification = btn.closest('.notification');
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%)';
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        });
+      });
+
+      // Highlight active navigation item
+      const currentPath = window.location.pathname;
+      document.querySelectorAll('.navbar-item').forEach(item => {
+        const href = item.getAttribute('href');
+        if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+          item.classList.add('active');
+        }
+      });
+
+      // Modal functionality
+      const modal = document.getElementById('ai-chat-modal');
+      const openBtn = document.getElementById('ai-chat-open');
+      const closeBtn = document.getElementById('ai-chat-close');
+      const modalBackdrop = modal.querySelector('.modal-backdrop');
+
+      if (openBtn && modal) {
+        openBtn.addEventListener('click', () => {
+          modal.classList.add('active');
+        });
+      }
+
+      if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+          modal.classList.remove('active');
+        });
+      }
+
+      if (modalBackdrop && modal) {
+        modalBackdrop.addEventListener('click', () => {
+          modal.classList.remove('active');
+        });
+      }
+
+      // AI Chat functionality
+      const chatForm = document.getElementById('ai-chat-form');
+      const chatInput = document.getElementById('ai-chat-input');
+      const messagesContainer = document.getElementById('ai-messages');
+
+      if (chatForm) {
+        chatForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const message = chatInput.value.trim();
+          if (!message) return;
+
+          // Add user message
+          addMessage(message, 'user');
+          chatInput.value = '';
+
+          try {
+            const response = await fetch('/ai-chat', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ message }),
+            });
+
+            const data = await response.json();
+            if (response.ok) {
+              addMessage(data.reply, 'assistant');
+            } else {
+              addMessage('Извините, произошла ошибка. Попробуйте позже.', 'error');
+            }
+          } catch (error) {
+            addMessage('Ошибка соединения. Проверьте подключение к интернету.', 'error');
+          }
+        });
+      }
+
+      function addMessage(text, role) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `chat-message chat-message-${role}`;
+        messageDiv.innerHTML = `
+          <div class="message-icon">
+            <i class="fas ${role === 'user' ? 'fa-user' : role === 'assistant' ? 'fa-robot' : 'fa-exclamation-triangle'}"></i>
+          </div>
+          <div class="message-text">${text}</div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.classList.contains('active')) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
