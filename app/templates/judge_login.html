@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Вход - Судебный законодатель</title>
+  <title>Вход судьи - Судебный законодатель</title>
   
   <!-- Google Fonts - Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,7 +22,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
       padding: 2rem;
     }
     
@@ -47,13 +47,13 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: var(--primary-gradient);
+      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
     }
     
     .login-logo {
       width: 80px;
       height: 80px;
-      background: var(--primary-gradient);
+      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
       border-radius: var(--radius-xl);
       display: flex;
       align-items: center;
@@ -100,6 +100,12 @@
       padding: 0.875rem 1.5rem;
       font-size: 1rem;
       margin-top: 0.5rem;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+      border: none;
+    }
+    
+    .login-form .button:hover {
+      background: linear-gradient(135deg, #1e40af 0%, #4f46e5 100%);
     }
     
     .login-divider {
@@ -130,13 +136,13 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      color: var(--primary);
+      color: #1e3a8a;
       font-weight: 500;
       transition: all var(--transition);
     }
     
     .login-links a:hover {
-      color: var(--primary-dark);
+      color: #3730a3;
       transform: translateX(4px);
     }
     
@@ -155,11 +161,25 @@
     }
     
     .back-home a:hover {
-      color: var(--primary);
+      color: #1e3a8a;
     }
     
     .notification {
       margin-bottom: 1.5rem;
+    }
+    
+    .access-code-hint {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      color: #92400e;
+    }
+    
+    .access-code-hint i {
+      margin-right: 0.5rem;
     }
   </style>
 </head>
@@ -168,12 +188,12 @@
     <div class="login-card">
       <!-- Logo -->
       <div class="login-logo">
-        <i class="fas fa-balance-scale"></i>
+        <i class="fas fa-gavel"></i>
       </div>
       
       <!-- Title -->
-      <h1 class="login-title">Вход для сотрудников</h1>
-      <p class="login-subtitle">Введите ваш email для доступа к платформе</p>
+      <h1 class="login-title">Вход для судей</h1>
+      <p class="login-subtitle">Введите email и код доступа для входа</p>
       
       <!-- Notifications -->
       {% set messages = get_messages(request) %}
@@ -187,16 +207,22 @@
         {% endfor %}
       {% endif %}
       
+      <!-- Access Code Hint -->
+      <div class="access-code-hint">
+        <i class="fas fa-info-circle"></i>
+        Код доступа для демонстрации: <strong>judge123</strong>
+      </div>
+      
       <!-- Login Form -->
-      <form method="post" action="/login" class="login-form">
+      <form method="post" action="/judge-login" class="login-form">
         <div class="field">
-          <label class="label">Email сотрудника</label>
+          <label class="label">Email судьи</label>
           <div class="control has-icons-left">
             <input 
               class="input" 
               type="email" 
               name="email" 
-              placeholder="employee@example.com"
+              placeholder="judge@example.com"
               required
               autocomplete="email"
             >
@@ -204,12 +230,30 @@
               <i class="fas fa-envelope"></i>
             </span>
           </div>
-          <p class="help">Введите email вашего аккаунта сотрудника</p>
+          <p class="help">Введите email вашего аккаунта судьи</p>
+        </div>
+
+        <div class="field">
+          <label class="label">Код доступа</label>
+          <div class="control has-icons-left">
+            <input 
+              class="input" 
+              type="password" 
+              name="access_code" 
+              placeholder="Код доступа"
+              required
+              autocomplete="current-password"
+            >
+            <span class="icon is-small is-left">
+              <i class="fas fa-lock"></i>
+            </span>
+          </div>
+          <p class="help">Введите код доступа для судей</p>
         </div>
 
         <div class="field">
           <div class="control">
-            <button type="submit" class="button is-primary is-fullwidth">
+            <button type="submit" class="button is-fullwidth">
               <i class="fas fa-sign-in-alt mr-2"></i>
               Войти в систему
             </button>
@@ -225,11 +269,11 @@
       <!-- Links -->
       <div class="login-links">
         <p style="color: var(--gray-600); margin-bottom: 1rem;">
-          <i class="fas fa-gavel mr-2"></i>
-          Вы судья?
+          <i class="fas fa-briefcase mr-2"></i>
+          Вы сотрудник?
         </p>
-        <a href="/judge-login">
-          Войти как судья
+        <a href="/login">
+          Войти как сотрудник
           <i class="fas fa-arrow-right"></i>
         </a>
       </div>

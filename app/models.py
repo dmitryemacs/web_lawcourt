@@ -3,31 +3,32 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
 
-class Student(Base):
-    __tablename__ = "students"
+class Employee(Base):
+    __tablename__ = "employees"
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
-    enroll_date = Column(DateTime, default=func.now())
-    group = relationship("Group", back_populates="students")
-    grades = relationship("Grade", back_populates="student")
-    enrollments = relationship("Enrollment", back_populates="student")
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    hire_date = Column(DateTime, default=func.now())
+    department = relationship("Department", back_populates="employees")
+    grades = relationship("Grade", back_populates="employee")
+    enrollments = relationship("Enrollment", back_populates="employee")
 
 class Course(Base):
     __tablename__ = "courses"
     id = Column(Integer, primary_key=True, index=True)
     subject_id = Column(Integer, ForeignKey("subjects.id"))
-    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
-    group_id = Column(Integer, ForeignKey("groups.id"), nullable=True)
+    judge_id = Column(Integer, ForeignKey("judges.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     semester = Column(String)
     credits = Column(Integer)
     subject = relationship("Subject", back_populates="courses")
-    teacher = relationship("Teacher", back_populates="courses")
-    group = relationship("Group", back_populates="courses")
+    judge = relationship("Judge", back_populates="courses")
+    department = relationship("Department", back_populates="courses")
     enrollments = relationship("Enrollment", back_populates="course")
     exams = relationship("Exam", back_populates="course")
+    tests = relationship("Test", back_populates="course")
 
 class Test(Base):
     __tablename__ = "tests"
@@ -38,6 +39,7 @@ class Test(Base):
     max_score = Column(Integer, default=100)
     time_limit = Column(Integer)  # в минутах
     created_at = Column(DateTime, default=func.now())
+    course = relationship("Course", back_populates="tests")
     questions = relationship("Question", back_populates="test", order_by="Question.order")
     results = relationship("TestResult", back_populates="test")
 
@@ -57,7 +59,7 @@ class TestResult(Base):
     __tablename__ = "test_results"
     id = Column(Integer, primary_key=True, index=True)
     test_id = Column(Integer, ForeignKey("tests.id"))
-    student_id = Column(Integer, ForeignKey("students.id"))
+    employee_id = Column(Integer, ForeignKey("employees.id"))
     score = Column(Float)
     max_score = Column(Integer)
     passed = Column(Boolean, default=False)
@@ -79,9 +81,9 @@ class Answer(Base):
 class Enrollment(Base):
     __tablename__ = "enrollments"
     id = Column(Integer, primary_key=True, index=True)
-    student_id = Column(Integer, ForeignKey("students.id"))
+    employee_id = Column(Integer, ForeignKey("employees.id"))
     course_id = Column(Integer, ForeignKey("courses.id"))
-    student = relationship("Student", back_populates="enrollments")
+    employee = relationship("Employee", back_populates="enrollments")
     course = relationship("Course", back_populates="enrollments")
 
 class Exam(Base):
@@ -97,11 +99,11 @@ class Grade(Base):
     __tablename__ = "grades"
     id = Column(Integer, primary_key=True, index=True)
     exam_id = Column(Integer, ForeignKey("exams.id"))
-    student_id = Column(Integer, ForeignKey("students.id"))
+    employee_id = Column(Integer, ForeignKey("employees.id"))
     score = Column(Float)
     graded_at = Column(DateTime, default=func.now())
     exam = relationship("Exam")
-    student = relationship("Student", back_populates="grades")
+    employee = relationship("Employee", back_populates="grades")
 
 class Subject(Base):
     __tablename__ = "subjects"
@@ -111,30 +113,21 @@ class Subject(Base):
     description = Column(Text)
     courses = relationship("Course", back_populates="subject")
 
-class Teacher(Base):
-    __tablename__ = "teachers"
+class Judge(Base):
+    __tablename__ = "judges"
     id = Column(Integer, primary_key=True, index=True)
     first_name = Column(String, index=True)
     last_name = Column(String, index=True)
     email = Column(String, unique=True, index=True)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    courses = relationship("Course", back_populates="teacher")
-
-class Group(Base):
-    __tablename__ = "groups"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)
-    intake_year = Column(Integer)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    department = relationship("Department", back_populates="groups")
-    courses = relationship("Course", back_populates="group")
-    students = relationship("Student", back_populates="group")
+    courses = relationship("Course", back_populates="judge")
 
 class Department(Base):
     __tablename__ = "departments"
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
-    groups = relationship("Group", back_populates="department")
+    employees = relationship("Employee", back_populates="department")
+    courses = relationship("Course", back_populates="department")
 
 
 class Case(Base):
@@ -147,6 +140,6 @@ class Case(Base):
     parties = Column(Text)
     next_hearing = Column(DateTime, nullable=True)
     is_video = Column(Boolean, default=False)
-    judge_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
+    judge_id = Column(Integer, ForeignKey("judges.id"), nullable=True)
     secretary = Column(String, nullable=True)
-    judge = relationship("Teacher")
+    judge = relationship("Judge")

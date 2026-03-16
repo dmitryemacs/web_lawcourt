@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1 class="title">
+      <i class="fas fa-building"></i>
+      Список отделов
+    </h1>
+    
+    <!-- Add Department Form -->
+    <div class="box">
+      <h2 class="subtitle">
+        <i class="fas fa-plus-circle"></i>
+        Добавить отдел
+      </h2>
+      <form action="/departments/add" method="post">
+        <div class="columns">
+          <div class="column">
+            <div class="field">
+              <label class="label">Название отдела</label>
+              <div class="control">
+                <input class="input" type="text" name="name" placeholder="Название отдела" required>
+              </div>
+            </div>
+          </div>
+          <div class="column is-narrow">
+            <div class="field">
+              <label class="label">&nbsp;</label>
+              <div class="control">
+                <button class="button is-primary" type="submit">
+                  <i class="fas fa-plus"></i>
+                  Добавить
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Departments List -->
+    <div class="box">
+      <h2 class="subtitle">
+        <i class="fas fa-list"></i>
+        Все отделы ({{ departments|length }})
+      </h2>
+      
+      {% if departments %}
+        <div class="columns is-multiline">
+          {% for dept in departments %}
+            <div class="column is-4">
+              <div class="card">
+                <div class="card-content">
+                  <div class="media">
+                    <div class="media-left">
+                      <span class="icon is-large has-text-primary">
+                        <i class="fas fa-building fa-2x"></i>
+                      </span>
+                    </div>
+                    <div class="media-content">
+                      <p class="title is-5">{{ dept.name }}</p>
+                      <p class="subtitle is-6">ID: {{ dept.id }}</p>
+                    </div>
+                  </div>
+                  
+                  <div class="content">
+                    <div class="tags">
+                      <span class="tag is-info">
+                        <i class="fas fa-users mr-1"></i>
+                        Сотрудников: {{ dept.employees|length }}
+                      </span>
+                      <span class="tag is-success">
+                        <i class="fas fa-book mr-1"></i>
+                        Курсов: {{ dept.courses|length }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <footer class="card-footer">
+                  <a href="/departments/{{ dept.id }}" class="card-footer-item has-text-info">
+                    <i class="fas fa-eye mr-1"></i>
+                    Просмотр
+                  </a>
+                  <a href="/departments/{{ dept.id }}/employees" class="card-footer-item has-text-success">
+                    <i class="fas fa-users mr-1"></i>
+                    Сотрудники
+                  </a>
+                </footer>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="notification is-warning">
+          <i class="fas fa-exclamation-triangle"></i>
+          Отделы не найдены. Добавьте первый отдел выше.
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Statistics -->
+    <div class="box">
+      <h2 class="subtitle">
+        <i class="fas fa-chart-bar"></i>
+        Статистика
+      </h2>
+      <div class="columns">
+        <div class="column">
+          <div class="notification is-info">
+            <p class="heading">Всего отделов</p>
+            <p class="title">{{ departments|length }}</p>
+          </div>
+        </div>
+        <div class="column">
+          <div class="notification is-success">
+            <p class="heading">Всего сотрудников</p>
+            <p class="title">
+              {% set total_employees = 0 %}
+              {% for dept in departments %}
+                {% set total_employees = total_employees + dept.employees|length %}
+              {% endfor %}
+              {{ total_employees }}
+            </p>
+          </div>
+        </div>
+        <div class="column">
+          <div class="notification is-primary">
+            <p class="heading">Всего курсов</p>
+            <p class="title">
+              {% set total_courses = 0 %}
+              {% for dept in departments %}
+                {% set total_courses = total_courses + dept.courses|length %}
+              {% endfor %}
+              {{ total_courses }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

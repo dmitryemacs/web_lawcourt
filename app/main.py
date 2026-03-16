@@ -14,7 +14,7 @@ import logging
 import asyncio
 
 from database import get_db, engine
-from models import Base, Student, Course, Enrollment, Exam, Grade, Subject, Teacher, Group, Department, Test, Question, TestResult, Answer, Case
+from models import Base, Employee, Course, Enrollment, Exam, Grade, Subject, Judge, Department, Test, Question, TestResult, Answer, Case
 
 # Система уведомлений
 class Message:
@@ -37,7 +37,7 @@ def clear_messages(request: Request):
     """Очистить уведомления"""
     request.session.pop("messages", None)
 
-app = FastAPI(title="Learning Platform")
+app = FastAPI(title="Судебный законодатель")
 app.add_middleware(SessionMiddleware, secret_key="your-secret-key-change-in-production")
 
 # Функция ожидания подключения к базе данных
@@ -85,52 +85,53 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
-    students = db.execute(select(Student)).scalars().all()
+    employees = db.execute(select(Employee)).scalars().all()
     courses = db.execute(select(Course)).scalars().all()
-    groups = db.execute(select(Group)).scalars().all()
-    return templates.TemplateResponse("students.html", {
+    departments = db.execute(select(Department)).scalars().all()
+    return templates.TemplateResponse("employees.html", {
         "request": request,
-        "students": students,
+        "employees": employees,
         "courses": courses,
-        "groups": groups
+        "departments": departments
     })
 
-@app.post("/students/add")
-def add_student(
+@app.post("/employees/add")
+def add_employee(
     request: Request,
     first_name: str = Form(...),
     last_name: str = Form(...),
     email: str = Form(None),
-    group_id: int = Form(None),
+    department_id: int = Form(None),
     db: Session = Depends(get_db)
 ):
-    student = Student(
+    employee = Employee(
         first_name=first_name,
         last_name=last_name,
         email=email,
-        group_id=group_id if group_id else None
+        department_id=department_id if department_id else None
     )
-    db.add(student)
+    db.add(employee)
     db.commit()
     return RedirectResponse(url='/', status_code=303)
+
 @app.post("/enroll")
 def enroll(
     request: Request,
-    student_id: int = Form(...),
+    employee_id: int = Form(...),
     course_id: int = Form(...),
     db: Session = Depends(get_db)
 ):
-    # Проверяем существование студента и курса
-    st = db.get(Student, student_id)
+    # Проверяем существование сотрудника и курса
+    emp = db.get(Employee, employee_id)
     cr = db.get(Course, course_id)
 
-    if not st or not cr:
-        raise HTTPException(status_code=404, detail="Student or Course not found")
+    if not emp or not cr:
+        raise HTTPException(status_code=404, detail="Employee or Course not found")
 
     # Проверяем существующую запись
     exists = db.execute(
         select(Enrollment).where(
-            Enrollment.student_id == student_id,
+            Enrollment.employee_id == employee_id,
             Enrollment.course_id == course_id
         )
     ).scalar_one_or_none()
@@ -138,16 +139,16 @@ def enroll(
     if exists:
         return RedirectResponse(url='/', status_code=303)
 
-    enroll = Enrollment(student_id=student_id, course_id=course_id)
-    db.add(enroll)
+    enrollment = Enrollment(employee_id=employee_id, course_id=course_id)
+    db.add(enrollment)
     db.commit()
     return RedirectResponse(url='/', status_code=303)
 
-@app.get("/transcript/{student_id}", response_class=HTMLResponse)
-def transcript(request: Request, student_id: int, db: Session = Depends(get_db)):
-    st = db.get(Student, student_id)
-    if not st:
-        raise HTTPException(status_code=404, detail="Student not found")
+@app.get("/transcript/{employee_id}", response_class=HTMLResponse)
+def transcript(request: Request, employee_id: int, db: Session = Depends(get_db)):
+    emp = db.get(Employee, employee_id)
+    if not emp:
+        raise HTTPException(status_code=404, detail="Employee not found")
 
     # Загружаем оценки с связанными данными
     grades = db.execute(
@@ -155,28 +156,28 @@ def transcript(request: Request, student_id: int, db: Session = Depends(get_db))
         .join(Grade.exam)
         .join(Exam.course)
         .join(Course.subject)
-        .where(Grade.student_id == student_id)
+        .where(Grade.employee_id == employee_id)
         .order_by(Grade.graded_at.desc())
     ).scalars().all()
 
-    # Получаем доступные экзамены для студента
+    # Получаем доступные экзамены для сотрудника
     available_exams = []
-    if st.group:
-        # Экзамены из курсов группы
-        group_courses = db.execute(
+    if emp.department:
+        # Экзамены из курсов отдела
+        department_courses = db.execute(
             select(Course)
-            .where(Course.group_id == st.group.id)
+            .where(Course.department_id == emp.department.id)
         ).scalars().all()
 
-        for course in group_courses:
+        for course in department_courses:
             course_exams = db.execute(
                 select(Exam)
                 .where(Exam.course_id == course.id)
             ).scalars().all()
             available_exams.extend(course_exams)
 
-    # Экзамены из курсов, на которые записан студент
-    for enrollment in st.enrollments:
+    # Экзамены из курсов, на которые записан сотрудник
+    for enrollment in emp.enrollments:
         course_exams = db.execute(
             select(Exam)
             .where(Exam.course_id == enrollment.course_id)
@@ -188,7 +189,7 @@ def transcript(request: Request, student_id: int, db: Session = Depends(get_db))
 
     return templates.TemplateResponse("transcript.html", {
         "request": request,
-        "student": st,
+        "employee": emp,
         "grades": grades,
         "available_exams": list(unique_exams)
     })
@@ -197,15 +198,15 @@ def transcript(request: Request, student_id: int, db: Session = Depends(get_db))
 def grade_assign(
     request: Request,
     exam_id: int = Form(...),
-    student_id: int = Form(...),
+    employee_id: int = Form(...),
     score: float = Form(...),
     db: Session = Depends(get_db)
 ):
     ex = db.get(Exam, exam_id)
-    st = db.get(Student, student_id)
+    emp = db.get(Employee, employee_id)
 
-    if not ex or not st:
-        raise HTTPException(status_code=404, detail="Exam or Student not found")
+    if not ex or not emp:
+        raise HTTPException(status_code=404, detail="Exam or Employee not found")
 
     # Проверяем максимальный балл
     if score > ex.max_score:
@@ -218,40 +219,40 @@ def grade_assign(
     existing = db.execute(
         select(Grade).where(
             Grade.exam_id == exam_id,
-            Grade.student_id == student_id
+            Grade.employee_id == employee_id
         )
     ).scalar_one_or_none()
 
     if existing:
         existing.score = score
     else:
-        g = Grade(exam_id=exam_id, student_id=student_id, score=score)
+        g = Grade(exam_id=exam_id, employee_id=employee_id, score=score)
         db.add(g)
 
     db.commit()
-    return RedirectResponse(url=f"/transcript/{student_id}", status_code=303)
+    return RedirectResponse(url=f"/transcript/{employee_id}", status_code=303)
 
 @app.get("/courses", response_class=HTMLResponse)
 def courses_view(request: Request, db: Session = Depends(get_db)):
     courses = db.execute(
         select(Course)
         .join(Course.subject)
-        .join(Course.teacher, isouter=True)
-        .join(Course.group, isouter=True)
+        .join(Course.judge, isouter=True)
+        .join(Course.department, isouter=True)
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
     # Get additional data for the form
     subjects = db.execute(select(Subject)).scalars().all()
-    teachers = db.execute(select(Teacher)).scalars().all()
-    groups = db.execute(select(Group)).scalars().all()
+    judges = db.execute(select(Judge)).scalars().all()
+    departments = db.execute(select(Department)).scalars().all()
 
     return templates.TemplateResponse("courses.html", {
         "request": request,
         "courses": courses,
         "subjects": subjects,
-        "teachers": teachers,
-        "groups": groups
+        "judges": judges,
+        "departments": departments
     })
 
 @app.get("/course/{course_id}", response_class=HTMLResponse)
@@ -260,8 +261,8 @@ def course_detail(request: Request, course_id: int, db: Session = Depends(get_db
         select(Course)
         .where(Course.id == course_id)
         .join(Course.subject)
-        .join(Course.teacher, isouter=True)
-        .join(Course.group, isouter=True)
+        .join(Course.judge, isouter=True)
+        .join(Course.department, isouter=True)
     ).scalar_one_or_none()
 
     if not course:
@@ -284,40 +285,33 @@ def course_detail(request: Request, course_id: int, db: Session = Depends(get_db
 def health_check():
     return {"status": "healthy", "database": "connected"}
 
-@app.get("/groups", response_class=HTMLResponse)
-def groups_view(request: Request, db: Session = Depends(get_db)):
-    groups = db.execute(
-        select(Group)
-        .join(Group.department, isouter=True)
-        .order_by(Group.name)
+@app.get("/departments", response_class=HTMLResponse)
+def departments_view(request: Request, db: Session = Depends(get_db)):
+    departments = db.execute(
+        select(Department)
+        .order_by(Department.name)
     ).scalars().all()
 
-    return templates.TemplateResponse("groups.html", {
+    return templates.TemplateResponse("departments.html", {
         "request": request,
-        "groups": groups
+        "departments": departments
     })
 
-@app.post("/groups/add")
-def add_group(
+@app.post("/departments/add")
+def add_department(
     request: Request,
     name: str = Form(...),
-    intake_year: int = Form(...),
-    department_id: int = Form(None),
     db: Session = Depends(get_db)
 ):
-    group = Group(
-        name=name,
-        intake_year=intake_year,
-        department_id=department_id if department_id else None
-    )
+    department = Department(name=name)
 
     try:
-        db.add(group)
+        db.add(department)
         db.commit()
         return RedirectResponse(url='/', status_code=303)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении группы: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении отдела: {str(e)}")
 
 @app.post("/courses/add")
 def add_course(
@@ -325,14 +319,14 @@ def add_course(
     subject_id: int = Form(...),
     semester: str = Form(...),
     credits: int = Form(...),
-    teacher_id: int = Form(None),
-    group_id: int = Form(None),
+    judge_id: int = Form(None),
+    department_id: int = Form(None),
     db: Session = Depends(get_db)
 ):
     course = Course(
         subject_id=subject_id,
-        teacher_id=teacher_id if teacher_id else None,
-        group_id=group_id if group_id else None,
+        judge_id=judge_id if judge_id else None,
+        department_id=department_id if department_id else None,
         semester=semester,
         credits=credits
     )
@@ -345,15 +339,15 @@ def add_course(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при добавлении курса: {str(e)}")
 
-@app.post("/teachers/add")
-def add_teacher(
+@app.post("/judges/add")
+def add_judge(
     request: Request,
     first_name: str = Form(...),
     last_name: str = Form(...),
     email: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    teacher = Teacher(
+    judge = Judge(
         first_name=first_name,
         last_name=last_name,
         email=email,
@@ -361,12 +355,12 @@ def add_teacher(
     )
 
     try:
-        db.add(teacher)
+        db.add(judge)
         db.commit()
         return RedirectResponse(url='/courses', status_code=303)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении преподавателя: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Ошибка при добавлении судьи: {str(e)}")
 
 @app.post("/subjects/add")
 def add_subject(
@@ -408,16 +402,16 @@ def tests_view(request: Request, db: Session = Depends(get_db)):
 @app.get("/tests/create", response_class=HTMLResponse)
 def create_test_form(request: Request, db: Session = Depends(get_db)):
     """Форма создания теста"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
     courses = db.execute(
         select(Course)
-        .where(Course.teacher_id == teacher_id)
+        .where(Course.judge_id == judge_id)
         .join(Course.subject)
-        .join(Course.group, isouter=True)
+        .join(Course.department, isouter=True)
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
@@ -437,14 +431,14 @@ def create_test(
     db: Session = Depends(get_db)
 ):
     """Создание теста"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
-    # Проверяем, что преподаватель действительно ведет этот курс
+    # Проверяем, что судья действительно ведет этот курс
     course = db.get(Course, course_id)
-    if not course or course.teacher_id != teacher_id:
+    if not course or course.judge_id != judge_id:
         add_message(request, "Вы не можете создавать тесты для этого курса", "is-danger")
         return RedirectResponse(url='/tests/create', status_code=303)
 
@@ -463,10 +457,10 @@ def create_test(
 @app.get("/tests/{test_id}/edit", response_class=HTMLResponse)
 def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
     """Редактирование теста и добавление вопросов"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
     test = db.execute(
         select(Test)
@@ -477,10 +471,10 @@ def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
-    # Проверяем, что преподаватель действительно ведет этот курс
-    if test.course.teacher_id != teacher_id:
+    # Проверяем, что судья действительно ведет этот курс
+    if test.course.judge_id != judge_id:
         add_message(request, "Вы не можете редактировать этот тест", "is-danger")
-        return RedirectResponse(url='/teacher-dashboard', status_code=303)
+        return RedirectResponse(url='/judge-dashboard', status_code=303)
 
     questions = db.execute(
         select(Question).where(Question.test_id == test_id).order_by(Question.order)
@@ -504,10 +498,10 @@ def add_question(
     db: Session = Depends(get_db)
 ):
     """Добавление вопроса к тесту"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
     test = db.execute(
         select(Test)
@@ -518,10 +512,10 @@ def add_question(
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
-    # Проверяем, что преподаватель действительно ведет этот курс
-    if test.course.teacher_id != teacher_id:
+    # Проверяем, что судья действительно ведет этот курс
+    if test.course.judge_id != judge_id:
         add_message(request, "Вы не можете добавлять вопросы к этому тесту", "is-danger")
-        return RedirectResponse(url='/teacher-dashboard', status_code=303)
+        return RedirectResponse(url='/judge-dashboard', status_code=303)
 
     # Определяем порядок вопроса
     last_order = db.execute(
@@ -553,7 +547,7 @@ def test_detail(request: Request, test_id: int, db: Session = Depends(get_db)):
         .where(Test.id == test_id)
         .join(Test.course)
         .join(Course.subject)
-        .join(Course.teacher, isouter=True)
+        .join(Course.judge, isouter=True)
     ).scalar_one_or_none()
 
     if not test:
@@ -598,16 +592,16 @@ def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
     if not test:
         raise HTTPException(status_code=404, detail="Test not found")
 
-    # Проверяем, может ли студент проходить этот тест
-    student_id = request.session.get("student_id")
-    if not student_id:
-        add_message(request, "Сначала войдите в систему как студент", "is-danger")
+    # Проверяем, может ли сотрудник проходить этот тест
+    employee_id = request.session.get("employee_id")
+    if not employee_id:
+        add_message(request, "Сначала войдите в систему как сотрудник", "is-danger")
         return RedirectResponse(url='/', status_code=303)
 
-    # Проверяем, записан ли студент на курс
+    # Проверяем, записан ли сотрудник на курс
     enrollment = db.execute(
         select(Enrollment)
-        .where(Enrollment.student_id == student_id)
+        .where(Enrollment.employee_id == employee_id)
         .where(Enrollment.course_id == test.course_id)
     ).scalar_one_or_none()
 
@@ -615,11 +609,11 @@ def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
         add_message(request, "Вы не записаны на этот курс", "is-danger")
         return RedirectResponse(url='/', status_code=303)
 
-    # Проверяем, не проходил ли студент уже этот тест
+    # Проверяем, не проходил ли сотрудник уже этот тест
     existing_result = db.execute(
         select(TestResult)
         .where(TestResult.test_id == test_id)
-        .where(TestResult.student_id == student_id)
+        .where(TestResult.employee_id == employee_id)
     ).scalar_one_or_none()
 
     if existing_result:
@@ -643,8 +637,8 @@ def submit_test(
     db: Session = Depends(get_db)
 ):
     """Сохранение результатов теста"""
-    student_id = request.session.get("student_id")
-    if not student_id:
+    employee_id = request.session.get("employee_id")
+    if not employee_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
     test = db.get(Test, test_id)
@@ -654,7 +648,7 @@ def submit_test(
     # Создаем результат теста
     result = TestResult(
         test_id=test_id,
-        student_id=student_id,
+        employee_id=employee_id,
         score=0,
         max_score=test.max_score
     )
@@ -710,21 +704,21 @@ def register_form(
     first_name: str = None,
     last_name: str = None,
     email: str = None,
-    group_id: int = None,
+    department_id: int = None,
     access_code: str = None
 ):
     """Форма регистрации"""
-    # Получаем список групп для выбора
-    groups = db.execute(select(Group).order_by(Group.name)).scalars().all()
+    # Получаем список отделов для выбора
+    departments = db.execute(select(Department).order_by(Department.name)).scalars().all()
     
     return templates.TemplateResponse("register.html", {
         "request": request,
-        "groups": groups,
+        "departments": departments,
         "role": role,
         "first_name": first_name,
         "last_name": last_name,
         "email": email,
-        "group_id": group_id,
+        "department_id": department_id,
         "access_code": access_code
     })
 
@@ -735,91 +729,91 @@ def register(
     first_name: str = Form(...),
     last_name: str = Form(...),
     email: str = Form(...),
-    group_id: str = Form(None),
+    department_id: str = Form(None),
     access_code: str = Form(None),
     db: Session = Depends(get_db)
 ):
-    """Регистрация пользователя (студента или преподавателя)"""
+    """Регистрация пользователя (сотрудника или судьи)"""
     
     # Проверяем, что email не занят
-    existing_student = db.execute(
-        select(Student).where(Student.email == email)
+    existing_employee = db.execute(
+        select(Employee).where(Employee.email == email)
     ).scalar_one_or_none()
     
-    existing_teacher = db.execute(
-        select(Teacher).where(Teacher.email == email)
+    existing_judge = db.execute(
+        select(Judge).where(Judge.email == email)
     ).scalar_one_or_none()
     
-    if existing_student or existing_teacher:
+    if existing_employee or existing_judge:
         add_message(request, "Пользователь с таким email уже существует", "is-danger")
-        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
     
-    if role == "student":
-        # Регистрация студента
-        if not group_id or group_id == "":
-            add_message(request, "Необходимо выбрать группу", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+    if role == "employee":
+        # Регистрация сотрудника
+        if not department_id or department_id == "":
+            add_message(request, "Необходимо выбрать отдел", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
         
         try:
-            group_id_int = int(group_id)
+            department_id_int = int(department_id)
         except (ValueError, TypeError):
-            add_message(request, "Неверная группа", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+            add_message(request, "Неверный отдел", "is-danger")
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
         
         try:
-            student = Student(
+            employee = Employee(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                group_id=group_id_int
+                department_id=department_id_int
             )
-            db.add(student)
+            db.add(employee)
             db.commit()
             
             add_message(request, "Регистрация успешна! Теперь вы можете войти в систему", "is-success")
             return RedirectResponse(url='/login', status_code=303)
         except Exception as e:
             db.rollback()
-            print(f"Error registering student: {e}")
+            print(f"Error registering employee: {e}")
             add_message(request, f"Ошибка при регистрации: {str(e)}", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
         
-    elif role == "teacher":
-        # Регистрация преподавателя
+    elif role == "judge":
+        # Регистрация судьи
         if not access_code:
             add_message(request, "Необходимо ввести код доступа", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
         
         # Проверяем код доступа (можно настроить более сложную логику)
-        if access_code != "teacher123":
+        if access_code != "judge123":
             add_message(request, "Неверный код доступа", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
         
         try:
-            teacher = Teacher(
+            judge = Judge(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
-                department_id=None  # Можно добавить выбор кафедры позже
+                department_id=None  # Можно добавить выбор отдела позже
             )
-            db.add(teacher)
+            db.add(judge)
             db.commit()
             
             add_message(request, "Регистрация успешна! Теперь вы можете войти в систему", "is-success")
-            return RedirectResponse(url='/teacher-login', status_code=303)
+            return RedirectResponse(url='/judge-login', status_code=303)
         except Exception as e:
             db.rollback()
-            print(f"Error registering teacher: {e}")
+            print(f"Error registering judge: {e}")
             add_message(request, f"Ошибка при регистрации: {str(e)}", "is-danger")
-            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+            return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
     
     else:
         add_message(request, "Неверный тип аккаунта", "is-danger")
-        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&group_id={group_id or ""}&access_code={access_code or ""}', status_code=303)
+        return RedirectResponse(url=f'/register?role={role}&first_name={first_name}&last_name={last_name}&email={email}&department_id={department_id or ""}&access_code={access_code or ""}', status_code=303)
 
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request, db: Session = Depends(get_db)):
-    """Форма входа для студентов"""
+    """Форма входа для сотрудников"""
     return templates.TemplateResponse("login.html", {
         "request": request
     })
@@ -830,140 +824,140 @@ def login(
     email: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """Вход студента"""
-    student = db.execute(
-        select(Student).where(Student.email == email)
+    """Вход сотрудника"""
+    employee = db.execute(
+        select(Employee).where(Employee.email == email)
     ).scalar_one_or_none()
 
-    if not student:
-        add_message(request, "Студент с таким email не найден", "is-danger")
+    if not employee:
+        add_message(request, "Сотрудник с таким email не найден", "is-danger")
         return RedirectResponse(url='/login', status_code=303)
 
-    # Сохраняем id студента в сессии
-    request.session["student_id"] = student.id
-    request.session["student_name"] = f"{student.first_name} {student.last_name}"
-    request.session["user_role"] = "student"
+    # Сохраняем id сотрудника в сессии
+    request.session["employee_id"] = employee.id
+    request.session["employee_name"] = f"{employee.first_name} {employee.last_name}"
+    request.session["user_role"] = "employee"
 
-    add_message(request, f"Добро пожаловать, {student.first_name}!", "is-success")
+    add_message(request, f"Добро пожаловать, {employee.first_name}!", "is-success")
     return RedirectResponse(url='/', status_code=303)
 
 @app.get("/logout")
 def logout(request: Request):
-    """Выход студента"""
+    """Выход сотрудника"""
     # Удаляем ключи безопасно
-    request.session.pop("student_id", None)
-    request.session.pop("student_name", None)
+    request.session.pop("employee_id", None)
+    request.session.pop("employee_name", None)
     request.session.pop("user_role", None)
 
     add_message(request, "Вы вышли из системы", "is-info")
     return RedirectResponse(url='/', status_code=303)
 
-@app.get("/teacher-login", response_class=HTMLResponse)
-def teacher_login_form(request: Request, db: Session = Depends(get_db)):
-    """Форма входа для преподавателей"""
-    return templates.TemplateResponse("teacher_login.html", {
+@app.get("/judge-login", response_class=HTMLResponse)
+def judge_login_form(request: Request, db: Session = Depends(get_db)):
+    """Форма входа для судей"""
+    return templates.TemplateResponse("judge_login.html", {
         "request": request
     })
 
-@app.post("/teacher-login")
-def teacher_login(
+@app.post("/judge-login")
+def judge_login(
     request: Request,
     email: str = Form(...),
     access_code: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    """Вход преподавателя"""
+    """Вход судьи"""
     # Простой код доступа для демонстрации
-    if access_code != "teacher123":
+    if access_code != "judge123":
         add_message(request, "Неверный код доступа", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+        return RedirectResponse(url='/judge-login', status_code=303)
 
-    teacher = db.execute(
-        select(Teacher).where(Teacher.email == email)
+    judge = db.execute(
+        select(Judge).where(Judge.email == email)
     ).scalar_one_or_none()
 
-    if not teacher:
-        add_message(request, "Преподаватель с таким email не найден", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+    if not judge:
+        add_message(request, "Судья с таким email не найден", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
-    # Сохраняем id преподавателя в сессии
-    request.session["teacher_id"] = teacher.id
-    request.session["teacher_name"] = f"{teacher.first_name} {teacher.last_name}"
-    request.session["user_role"] = "teacher"
+    # Сохраняем id судьи в сессии
+    request.session["judge_id"] = judge.id
+    request.session["judge_name"] = f"{judge.first_name} {judge.last_name}"
+    request.session["user_role"] = "judge"
 
-    add_message(request, f"Добро пожаловать, {teacher.first_name}!", "is-success")
-    return RedirectResponse(url='/teacher-dashboard', status_code=303)
+    add_message(request, f"Добро пожаловать, {judge.first_name}!", "is-success")
+    return RedirectResponse(url='/judge-dashboard', status_code=303)
 
-@app.get("/teacher-logout")
-def teacher_logout(request: Request):
-    """Выход преподавателя"""
+@app.get("/judge-logout")
+def judge_logout(request: Request):
+    """Выход судьи"""
     # Удаляем ключи безопасно
-    request.session.pop("teacher_id", None)
-    request.session.pop("teacher_name", None)
+    request.session.pop("judge_id", None)
+    request.session.pop("judge_name", None)
     request.session.pop("user_role", None)
 
     add_message(request, "Вы вышли из системы", "is-info")
     return RedirectResponse(url='/', status_code=303)
 
-@app.get("/teacher-dashboard", response_class=HTMLResponse)
-def teacher_dashboard(request: Request, db: Session = Depends(get_db)):
-    """Панель преподавателя"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+@app.get("/judge-dashboard", response_class=HTMLResponse)
+def judge_dashboard(request: Request, db: Session = Depends(get_db)):
+    """Панель судьи"""
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
-    # Получаем курсы преподавателя
+    # Получаем курсы судьи
     courses = db.execute(
         select(Course)
-        .where(Course.teacher_id == teacher_id)
+        .where(Course.judge_id == judge_id)
         .join(Course.subject)
-        .join(Course.group, isouter=True)
+        .join(Course.department, isouter=True)
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
-    return templates.TemplateResponse("teacher_dashboard.html", {
+    return templates.TemplateResponse("judge_dashboard.html", {
         "request": request,
         "courses": courses
     })
 
-@app.get("/teacher-test-results", response_class=HTMLResponse)
-def teacher_test_results(request: Request, db: Session = Depends(get_db)):
-    """Просмотр результатов тестов преподавателем"""
-    teacher_id = request.session.get("teacher_id")
-    if not teacher_id:
-        add_message(request, "Сначала войдите в систему как преподаватель", "is-danger")
-        return RedirectResponse(url='/teacher-login', status_code=303)
+@app.get("/judge-test-results", response_class=HTMLResponse)
+def judge_test_results(request: Request, db: Session = Depends(get_db)):
+    """Просмотр результатов тестов судьей"""
+    judge_id = request.session.get("judge_id")
+    if not judge_id:
+        add_message(request, "Сначала войдите в систему как судья", "is-danger")
+        return RedirectResponse(url='/judge-login', status_code=303)
 
-    # Получаем курсы преподавателя
-    teacher_courses = db.execute(
+    # Получаем курсы судьи
+    judge_courses = db.execute(
         select(Course)
-        .where(Course.teacher_id == teacher_id)
+        .where(Course.judge_id == judge_id)
         .join(Course.subject)
-        .join(Course.group, isouter=True)
+        .join(Course.department, isouter=True)
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
-    # Получаем результаты тестов по курсам преподавателя
+    # Получаем результаты тестов по курсам судьи
     test_results = db.execute(
         select(TestResult)
         .join(TestResult.test)
         .join(Test.course)
-        .where(Course.teacher_id == teacher_id)
-        .join(TestResult.student)
+        .where(Course.judge_id == judge_id)
+        .join(TestResult.employee)
         .order_by(TestResult.completed_at.desc())
         .limit(50)
     ).scalars().all()
 
     # Считаем статистику
-    total_tests = len([t for t in teacher_courses for _ in t.tests])
+    total_tests = len([t for t in judge_courses for _ in t.tests])
     completed_tests = len(test_results)
     passed_tests = sum(1 for r in test_results if r.passed)
     failed_tests = completed_tests - passed_tests
 
-    return templates.TemplateResponse("teacher_test_results.html", {
+    return templates.TemplateResponse("judge_test_results.html", {
         "request": request,
-        "courses": teacher_courses,
+        "courses": judge_courses,
         "test_results": test_results,
         "total_tests": total_tests,
         "completed_tests": completed_tests,
@@ -971,15 +965,15 @@ def teacher_test_results(request: Request, db: Session = Depends(get_db)):
         "failed_tests": failed_tests
     })
 
-def require_teacher(request: Request):
-    """Декоратор для проверки роли преподавателя"""
-    if request.session.get("user_role") != "teacher":
-        raise HTTPException(status_code=403, detail="Access denied - teacher required")
+def require_judge(request: Request):
+    """Декоратор для проверки роли судьи"""
+    if request.session.get("user_role") != "judge":
+        raise HTTPException(status_code=403, detail="Access denied - judge required")
 
-def require_student(request: Request):
-    """Декоратор для проверки роли студента"""
-    if not request.session.get("student_id"):
-        raise HTTPException(status_code=403, detail="Access denied - student required")
+def require_employee(request: Request):
+    """Декоратор для проверки роли сотрудника"""
+    if not request.session.get("employee_id"):
+        raise HTTPException(status_code=403, detail="Access denied - employee required")
 
 
 def require_roles(request: Request, allowed: List[str]):
@@ -1041,7 +1035,7 @@ def judicial_home(request: Request):
     <html lang="ru">
     <head>
         <meta charset="utf-8" />
-        <title>Судебная система</title>
+        <title>Судебный законодатель</title>
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
         <style>body {{ padding: 20px; }}</style>
     </head>
@@ -1127,15 +1121,15 @@ async def ai_chat(request: Request):
     if len(user_message) > 2000:
         raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
 
-    # Require authenticated user (student or teacher)
-    if not (request.session.get("student_id") or request.session.get("teacher_id")):
+    # Require authenticated user (employee or judge)
+    if not (request.session.get("employee_id") or request.session.get("judge_id")):
         raise HTTPException(status_code=403, detail="Authentication required to use AI chat")
 
     # Read configuration from environment
     api_key = os.environ.get("OPENROUTER_API_KEY")
     model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
     site_url = os.environ.get("SITE_URL", "http://localhost:8000")
-    site_name = os.environ.get("SITE_NAME", "Learning Platform")
+    site_name = os.environ.get("SITE_NAME", "Судебный законодатель")
 
     if not api_key:
         raise HTTPException(status_code=503, detail="OpenRouter API key not configured (OPENROUTER_API_KEY)")
@@ -1201,12 +1195,12 @@ def demo_judge_dashboard(request: Request):
         now = datetime.utcnow()
         hearings = db.execute(select(Case).where(Case.next_hearing != None).order_by(Case.next_hearing)).scalars().all()
         assigned = db.execute(select(Case).order_by(Case.next_hearing)).scalars().all()
-        teachers = db.execute(select(Teacher)).scalars().all()
+        judges = db.execute(select(Judge)).scalars().all()
     finally:
         if db is not None:
             db.close()
 
-    return templates.TemplateResponse("judge_dashboard.html", {"request": request, "current_hearings": hearings, "assigned_cases": assigned, "teachers": teachers})
+    return templates.TemplateResponse("judge_dashboard.html", {"request": request, "current_hearings": hearings, "assigned_cases": assigned, "judges": judges})
 
 
 @app.get("/demo/case/{case_id}", response_class=HTMLResponse)
@@ -1245,10 +1239,10 @@ def api_cases(db: Session = Depends(get_db)):
     return {"cases": out}
 
 
-@app.get("/api/teachers")
-def api_teachers(db: Session = Depends(get_db)):
-    teachers = db.execute(select(Teacher)).scalars().all()
-    return {"teachers": [{"id": t.id, "name": f"{t.first_name} {t.last_name}"} for t in teachers]}
+@app.get("/api/judges")
+def api_judges(db: Session = Depends(get_db)):
+    judges = db.execute(select(Judge)).scalars().all()
+    return {"judges": [{"id": j.id, "name": f"{j.first_name} {j.last_name}"} for j in judges]}
 
 
 
@@ -1341,57 +1335,53 @@ def edit_case(request: Request,
 def init_sample_data(db: Session = Depends(get_db)):
     """Создание тестовых данных"""
     try:
-        # Создаем кафедру
-        dept = Department(name="Факультет компьютерных наук")
+        # Создаем отдел
+        dept = Department(name="Судебный департамент")
         db.add(dept)
         db.flush()
 
-        # Создаем преподавателей
-        teacher1 = Teacher(
+        # Создаем судей
+        judge1 = Judge(
             first_name="Иван",
             last_name="Петров",
             department_id=dept.id,
             email="ivan.petrov@example.org"
         )
-        teacher2 = Teacher(
+        judge2 = Judge(
             first_name="Мария",
             last_name="Сидорова",
             department_id=dept.id,
             email="maria.sidorova@example.org"
         )
-        db.add_all([teacher1, teacher2])
+        db.add_all([judge1, judge2])
         db.flush()
 
-        # Создаем группы
-        group1 = Group(
-            name="CS-101",
-            department_id=dept.id,
-            intake_year=2023
+        # Создаем отделы
+        dept1 = Department(
+            name="Гражданский отдел"
         )
-        group2 = Group(
-            name="CS-102",
-            department_id=dept.id,
-            intake_year=2022
+        dept2 = Department(
+            name="Уголовный отдел"
         )
-        db.add_all([group1, group2])
+        db.add_all([dept1, dept2])
         db.flush()
 
         # Создаем предметы
         subjects = [
             Subject(
-                code="CS101",
-                title="Введение в программирование",
-                description="Базовый курс программирования на Python"
+                code="LAW101",
+                title="Гражданское право",
+                description="Основы гражданского права"
             ),
             Subject(
-                code="CS102",
-                title="Алгоритмы и структуры данных",
-                description="Изучение алгоритмов и структур данных"
+                code="LAW102",
+                title="Уголовное право",
+                description="Изучение уголовного права"
             ),
             Subject(
-                code="MATH101",
-                title="Дискретная математика",
-                description="Основы дискретной математики"
+                code="LAW103",
+                title="Конституционное право",
+                description="Основы конституционного права"
             )
         ]
         db.add_all(subjects)
@@ -1401,68 +1391,68 @@ def init_sample_data(db: Session = Depends(get_db)):
         courses = [
             Course(
                 subject_id=subjects[0].id,
-                teacher_id=teacher1.id,
-                group_id=group1.id,
-                semester="Осень 2023",
+                judge_id=judge1.id,
+                department_id=dept1.id,
+                semester="Осень 2024",
                 credits=3
             ),
             Course(
                 subject_id=subjects[1].id,
-                teacher_id=teacher2.id,
-                group_id=group1.id,
-                semester="Весна 2024",
+                judge_id=judge2.id,
+                department_id=dept2.id,
+                semester="Весна 2025",
                 credits=4
             ),
             Course(
                 subject_id=subjects[2].id,
-                teacher_id=teacher1.id,
-                group_id=group2.id,
-                semester="Осень 2023",
+                judge_id=judge1.id,
+                department_id=dept1.id,
+                semester="Осень 2024",
                 credits=3
             )
         ]
         db.add_all(courses)
         db.flush()
 
-        # Создаем студентов
-        students = [
-            Student(
+        # Создаем сотрудников
+        employees = [
+            Employee(
                 first_name="Алексей",
                 last_name="Иванов",
                 email="alexey.ivanov@example.org",
-                group_id=group1.id,
-                enroll_date=datetime.now() - timedelta(days=365)
+                department_id=dept1.id,
+                hire_date=datetime.now() - timedelta(days=365)
             ),
-            Student(
+            Employee(
                 first_name="Екатерина",
                 last_name="Смирнова",
                 email="ekaterina.smirnova@example.org",
-                group_id=group1.id,
-                enroll_date=datetime.now() - timedelta(days=360)
+                department_id=dept1.id,
+                hire_date=datetime.now() - timedelta(days=360)
             ),
-            Student(
+            Employee(
                 first_name="Дмитрий",
                 last_name="Кузнецов",
                 email="dmitry.kuznetsov@example.org",
-                group_id=group1.id,
-                enroll_date=datetime.now() - timedelta(days=355)
+                department_id=dept2.id,
+                hire_date=datetime.now() - timedelta(days=355)
             ),
-            Student(
+            Employee(
                 first_name="Ольга",
                 last_name="Попова",
                 email="olga.popova@example.org",
-                group_id=group2.id,
-                enroll_date=datetime.now() - timedelta(days=730)
+                department_id=dept2.id,
+                hire_date=datetime.now() - timedelta(days=730)
             ),
-            Student(
+            Employee(
                 first_name="Сергей",
                 last_name="Васильев",
                 email="sergey.vasiliev@example.org",
-                group_id=group2.id,
-                enroll_date=datetime.now() - timedelta(days=725)
+                department_id=dept1.id,
+                hire_date=datetime.now() - timedelta(days=725)
             )
         ]
-        db.add_all(students)
+        db.add_all(employees)
         db.flush()
 
         # Создаем экзамены
@@ -1491,26 +1481,26 @@ def init_sample_data(db: Session = Depends(get_db)):
 
         # Создаем записи на курсы
         enrollments = [
-            Enrollment(student_id=students[0].id, course_id=courses[0].id),
-            Enrollment(student_id=students[0].id, course_id=courses[1].id),
-            Enrollment(student_id=students[1].id, course_id=courses[0].id),
-            Enrollment(student_id=students[1].id, course_id=courses[1].id),
-            Enrollment(student_id=students[2].id, course_id=courses[0].id),
-            Enrollment(student_id=students[3].id, course_id=courses[2].id),
-            Enrollment(student_id=students[4].id, course_id=courses[2].id)
+            Enrollment(employee_id=employees[0].id, course_id=courses[0].id),
+            Enrollment(employee_id=employees[0].id, course_id=courses[1].id),
+            Enrollment(employee_id=employees[1].id, course_id=courses[0].id),
+            Enrollment(employee_id=employees[1].id, course_id=courses[1].id),
+            Enrollment(employee_id=employees[2].id, course_id=courses[0].id),
+            Enrollment(employee_id=employees[3].id, course_id=courses[2].id),
+            Enrollment(employee_id=employees[4].id, course_id=courses[2].id)
         ]
         db.add_all(enrollments)
         db.flush()
 
         # Создаем оценки
         grades = [
-            Grade(exam_id=exams[0].id, student_id=students[0].id, score=88),
-            Grade(exam_id=exams[0].id, student_id=students[1].id, score=92),
-            Grade(exam_id=exams[0].id, student_id=students[2].id, score=76),
-            Grade(exam_id=exams[1].id, student_id=students[0].id, score=45),
-            Grade(exam_id=exams[1].id, student_id=students[1].id, score=48),
-            Grade(exam_id=exams[2].id, student_id=students[3].id, score=68),
-            Grade(exam_id=exams[2].id, student_id=students[4].id, score=72)
+            Grade(exam_id=exams[0].id, employee_id=employees[0].id, score=88),
+            Grade(exam_id=exams[0].id, employee_id=employees[1].id, score=92),
+            Grade(exam_id=exams[0].id, employee_id=employees[2].id, score=76),
+            Grade(exam_id=exams[1].id, employee_id=employees[0].id, score=45),
+            Grade(exam_id=exams[1].id, employee_id=employees[1].id, score=48),
+            Grade(exam_id=exams[2].id, employee_id=employees[3].id, score=68),
+            Grade(exam_id=exams[2].id, employee_id=employees[4].id, score=72)
         ]
         db.add_all(grades)
 
@@ -1519,15 +1509,15 @@ def init_sample_data(db: Session = Depends(get_db)):
         # Подготавливаем информацию для вывода
         test_data = {
             "message": "Тестовые данные созданы успешно!",
-            "students": [
-                {"name": f"{s.first_name} {s.last_name}", "email": s.email}
-                for s in students
+            "employees": [
+                {"name": f"{e.first_name} {e.last_name}", "email": e.email}
+                for e in employees
             ],
-            "teachers": [
-                {"name": f"{t.first_name} {t.last_name}", "email": t.email}
-                for t in [teacher1, teacher2]
+            "judges": [
+                {"name": f"{j.first_name} {j.last_name}", "email": j.email}
+                for j in [judge1, judge2]
             ],
-            "teacher_access_code": "teacher123"
+            "judge_access_code": "judge123"
         }
         return test_data
 

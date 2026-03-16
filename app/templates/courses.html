@@ -1,124 +1,102 @@
 {% extends "base.html" %}
 {% block content %}
-<!-- Подключаем Flatpickr для календарей -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Инициализация календарей
-    flatpickr.localize(flatpickr.l10n.ru.ru);
-
-    // Календарь для даты поступления в форме добавления студента (если будет)
-    const dateInputs = document.querySelectorAll('input[type="date"]');
-    dateInputs.forEach(input => {
-        flatpickr(input, {
-            dateFormat: "Y-m-d",
-            locale: "ru",
-            allowInput: true
-        });
-    });
-});
-</script>
-<div class="columns">
+<div class="columns is-multiline">
+  <!-- Left Column - Forms -->
   <div class="column is-one-third">
-    <!-- Форма добавления курса -->
+    <!-- Add Course Form -->
     <div class="box has-shadow">
-      <h3 class="title is-4 has-text-primary mb-4">
-        <i class="fas fa-plus mr-2"></i>
+      <h3 class="title is-4 has-text-primary">
+        <i class="fas fa-plus-circle mr-2"></i>
         Добавить курс
       </h3>
-        <form method="post" action="/courses/add">
-          <div class="field">
-            <label class="label">Предмет</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select name="subject_id" required>
-                  <option value="">-- выберите предмет --</option>
-                  {% for subject in subjects %}
-                  <option value="{{subject.id}}">
-                    {{subject.code}} - {{subject.title}}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
+      <form method="post" action="/courses/add">
+        <div class="field">
+          <label class="label">Предмет</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="subject_id" required>
+                <option value="">-- выберите предмет --</option>
+                {% for subject in subjects %}
+                <option value="{{subject.id}}">
+                  {{subject.code}} - {{subject.title}}
+                </option>
+                {% endfor %}
+              </select>
             </div>
           </div>
+        </div>
 
-          <div class="field">
-            <label class="label">Преподаватель</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select name="teacher_id">
-                  <option value="">-- без преподавателя --</option>
-                  {% for teacher in teachers %}
-                  <option value="{{teacher.id}}">
-                    {{teacher.first_name}} {{teacher.last_name}}
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
+        <div class="field">
+          <label class="label">Судья</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="judge_id">
+                <option value="">-- без судьи --</option>
+                {% for judge in judges %}
+                <option value="{{judge.id}}">
+                  {{judge.first_name}} {{judge.last_name}}
+                </option>
+                {% endfor %}
+              </select>
             </div>
           </div>
+        </div>
 
-          <div class="field">
-            <label class="label">Группа</label>
-            <div class="control">
-              <div class="select is-fullwidth">
-                <select name="group_id">
-                  <option value="">-- без группы --</option>
-                  {% for group in groups %}
-                  <option value="{{group.id}}">
-                    {{group.name}} ({{group.intake_year}})
-                  </option>
-                  {% endfor %}
-                </select>
-              </div>
+        <div class="field">
+          <label class="label">Отдел</label>
+          <div class="control">
+            <div class="select is-fullwidth">
+              <select name="department_id">
+                <option value="">-- без отдела --</option>
+                {% for dept in departments %}
+                <option value="{{dept.id}}">
+                  {{dept.name}}
+                </option>
+                {% endfor %}
+              </select>
             </div>
           </div>
+        </div>
 
-          <div class="field">
-            <label class="label">Семестр</label>
-            <div class="control has-icons-left">
-              <input class="input" name="semester" placeholder="Осень 2024" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-calendar"></i>
-              </span>
-            </div>
+        <div class="field">
+          <label class="label">Семестр</label>
+          <div class="control has-icons-left">
+            <input class="input" name="semester" placeholder="Осень 2024" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-calendar-alt"></i>
+            </span>
           </div>
+        </div>
 
-          <div class="field">
-            <label class="label">Кредиты</label>
-            <div class="control has-icons-left">
-              <input class="input" name="credits" type="number" min="1" max="10" value="3" required/>
-              <span class="icon is-small is-left">
-                <i class="fas fa-graduation-cap"></i>
-              </span>
-            </div>
+        <div class="field">
+          <label class="label">Кредиты</label>
+          <div class="control has-icons-left">
+            <input class="input" name="credits" type="number" min="1" max="10" value="3" required/>
+            <span class="icon is-small is-left">
+              <i class="fas fa-graduation-cap"></i>
+            </span>
           </div>
+        </div>
 
-          <div class="field mt-4">
-            <div class="control">
-              <button class="button is-primary is-fullwidth is-medium" type="submit">
-                <i class="fas fa-plus mr-2"></i>
-                Добавить курс
-              </button>
-            </div>
+        <div class="field mt-4">
+          <div class="control">
+            <button class="button is-primary is-fullwidth is-medium" type="submit">
+              <i class="fas fa-plus mr-2"></i>
+              Добавить курс
+            </button>
           </div>
-        </form>
-      </div>
+        </div>
+      </form>
     </div>
-  </div>
 
-  <!-- Форма добавления преподавателя -->
-  <div class="column is-one-third">
+    <!-- Add Judge Form -->
     <div class="box has-shadow mt-4">
-      <h3 class="title is-4 has-text-success mb-4">
-        <i class="fas fa-chalkboard-teacher mr-2"></i>
-        Добавить преподавателя
+      <h3 class="title is-4 has-text-success">
+        <i class="fas fa-gavel mr-2"></i>
+        Добавить судью
       </h3>
-      <form method="post" action="/teachers/add">
+      <form method="post" action="/judges/add">
         <div class="field">
           <label class="label">Имя</label>
           <div class="control has-icons-left">
@@ -140,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field">
           <label class="label">Email</label>
           <div class="control has-icons-left">
-            <input class="input" name="email" type="email" placeholder="teacher@example.com"/>
+            <input class="input" name="email" type="email" placeholder="judge@example.com"/>
             <span class="icon is-small is-left">
               <i class="fas fa-envelope"></i>
             </span>
@@ -150,20 +128,16 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="control">
             <button class="button is-success is-fullwidth is-medium" type="submit">
               <i class="fas fa-plus mr-2"></i>
-              Добавить преподавателя
+              Добавить судью
             </button>
           </div>
         </div>
       </form>
     </div>
-  </div>
-</div>
 
-<!-- Вторая строка с формой добавления предмета -->
-<div class="columns mt-4">
-  <div class="column is-one-third">
-    <div class="box has-shadow">
-      <h3 class="title is-4 has-text-warning mb-4">
+    <!-- Add Subject Form -->
+    <div class="box has-shadow mt-4">
+      <h3 class="title is-4 has-text-warning">
         <i class="fas fa-book mr-2"></i>
         Добавить предмет
       </h3>
@@ -171,7 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field">
           <label class="label">Код предмета</label>
           <div class="control has-icons-left">
-            <input class="input" name="code" placeholder="CS101" required/>
+            <input class="input" name="code" placeholder="LAW101" required/>
             <span class="icon is-small is-left">
               <i class="fas fa-hashtag"></i>
             </span>
@@ -180,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="field">
           <label class="label">Название</label>
           <div class="control has-icons-left">
-            <input class="input" name="title" placeholder="Введение в программирование" required/>
+            <input class="input" name="title" placeholder="Гражданское право" required/>
             <span class="icon is-small is-left">
               <i class="fas fa-heading"></i>
             </span>
@@ -204,72 +178,140 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
   </div>
 
+  <!-- Right Column - Courses List -->
   <div class="column">
-  <div class="box has-shadow">
-    <div class="level mb-4">
-      <div class="level-left">
-        <h3 class="title is-4">
-          <i class="fas fa-list mr-2"></i>
-          Список курсов
-        </h3>
-      </div>
-      <div class="level-right">
-        <div class="tags has-addons">
-          <span class="tag is-info">
+    <div class="box has-shadow">
+      <div class="level">
+        <div class="level-left">
+          <h3 class="title is-4">
+            <i class="fas fa-book-open mr-2"></i>
+            Список курсов
+          </h3>
+        </div>
+        <div class="level-right">
+          <span class="tag is-primary is-medium">
             <i class="fas fa-book mr-1"></i>
-            Всего
-          </span>
-          <span class="tag is-primary">
-            {{courses|length}}
+            Всего: {{courses|length}}
           </span>
         </div>
       </div>
-    </div>
-  <table class="table is-fullwidth is-striped">
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Предмет</th>
-        <th>Преподаватель</th>
-        <th>Группа</th>
-        <th>Семестр</th>
-        <th>Кредиты</th>
-        <th>Действия</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in courses %}
-      <tr>
-        <td>{{c.id}}</td>
-        <td>{{c.subject.title}} ({{c.subject.code}})</td>
-        <td>
-          {% if c.teacher %}
-            {{c.teacher.first_name}} {{c.teacher.last_name}}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-        <td>
-          {% if c.group %}
-            {{c.group.name}}
-          {% else %}
-            -
-          {% endif %}
-        </td>
-        <td>{{c.semester}}</td>
-        <td>{{c.credits}}</td>
-        <td>
-          <a class="button is-small is-info" href="/course/{{c.id}}">Детали</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
 
-  <div class="mt-4">
-    <a class="button is-light" href="/">На главную</a>
-  </div>
-  </div>
+      {% if courses %}
+      <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Предмет</th>
+              <th>Судья</th>
+              <th>Отдел</th>
+              <th>Семестр</th>
+              <th>Кредиты</th>
+              <th>Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in courses %}
+            <tr>
+              <td><strong>{{c.id}}</strong></td>
+              <td>
+                <span class="icon-text">
+                  <span class="icon has-text-primary">
+                    <i class="fas fa-book"></i>
+                  </span>
+                  <span>{{c.subject.title}}</span>
+                </span>
+                <br>
+                <span class="tag is-light is-small">{{c.subject.code}}</span>
+              </td>
+              <td>
+                {% if c.judge %}
+                  <span class="icon-text">
+                    <span class="icon has-text-success">
+                      <i class="fas fa-gavel"></i>
+                    </span>
+                    <span>{{c.judge.first_name}} {{c.judge.last_name}}</span>
+                  </span>
+                {% else %}
+                  <span class="tag is-light">Не назначен</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.department %}
+                  <span class="tag is-info">
+                    <i class="fas fa-building mr-1"></i>
+                    {{c.department.name}}
+                  </span>
+                {% else %}
+                  <span class="tag is-light">Общий</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="icon-text">
+                  <span class="icon has-text-info">
+                    <i class="fas fa-calendar-alt"></i>
+                  </span>
+                  <span>{{c.semester}}</span>
+                </span>
+              </td>
+              <td>
+                <span class="tag is-warning">
+                  <i class="fas fa-graduation-cap mr-1"></i>
+                  {{c.credits}}
+                </span>
+              </td>
+              <td>
+                <a class="button is-small is-info is-light" href="/course/{{c.id}}">
+                  <span class="icon">
+                    <i class="fas fa-eye"></i>
+                  </span>
+                  <span>Детали</span>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-book-open"></i>
+        <p>Нет курсов. Добавьте первый курс!</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="columns mt-4">
+      <div class="column">
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-icon is-primary">
+            <i class="fas fa-book"></i>
+          </div>
+          <div class="dashboard-stat-value">{{courses|length}}</div>
+          <div class="dashboard-stat-label">Всего курсов</div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-icon is-success">
+            <i class="fas fa-gavel"></i>
+          </div>
+          <div class="dashboard-stat-value">{{judges|length}}</div>
+          <div class="dashboard-stat-label">Судей</div>
+        </div>
+      </div>
+      <div class="column">
+        <div class="dashboard-stat">
+          <div class="dashboard-stat-icon is-info">
+            <i class="fas fa-bookmark"></i>
+          </div>
+          <div class="dashboard-stat-value">{{subjects|length}}</div>
+          <div class="dashboard-stat-label">Предметов</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
 {% endblock %}
