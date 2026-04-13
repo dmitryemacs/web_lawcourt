@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Результаты тестов - Судья</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', path='modern.css') }}">
+</head>
+<body>
+<section class="section">
+  <div class="container">
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="/judge-dashboard">
+          <i class="fas fa-gavel mr-2" style="font-size: 1.3rem;"></i>
+          <strong>Панель судьи</strong>
+        </a>
+      </div>
+
+      <div class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="/courses">
+            <i class="fas fa-book mr-2"></i>
+            Курсы
+          </a>
+          <a class="navbar-item" href="/tests">
+            <i class="fas fa-flask mr-2"></i>
+            Тесты
+          </a>
+          <a class="navbar-item is-active" href="/judge-test-results">
+            <i class="fas fa-chart-bar mr-2"></i>
+            Результаты тестов
+          </a>
+        </div>
+
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <div class="buttons">
+              <a href="/judge-logout" class="button is-danger is-light">
+                <i class="fas fa-sign-out-alt mr-2"></i>
+                Выйти
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="box has-shadow mb-4">
+      <h1 class="title has-text-primary">
+        <i class="fas fa-chart-line mr-2"></i>
+        Результаты тестов
+      </h1>
+      <p class="subtitle is-5">Анализ успеваемости сотрудников</p>
+    </div>
+
+    <div class="box has-shadow mb-4">
+      <h2 class="title is-4 mb-4">
+        <i class="fas fa-chart-pie mr-2"></i>
+        Общая статистика
+      </h2>
+      <div class="columns">
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-primary">{{ total_tests }}</p>
+              <p class="subtitle is-6">Всего тестов</p>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-success">{{ completed_tests }}</p>
+              <p class="subtitle is-6">Пройдено тестов</p>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-warning">{{ passed_tests }}</p>
+              <p class="subtitle is-6">Зачтено</p>
+            </div>
+          </div>
+        </div>
+        <div class="column">
+          <div class="box has-shadow has-background-light">
+            <div class="has-text-centered">
+              <p class="title has-text-danger">{{ failed_tests }}</p>
+              <p class="subtitle is-6">Не зачтено</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="box has-shadow">
+      <h2 class="title is-4 mb-4">
+        <i class="fas fa-list-check mr-2"></i>
+        Последние результаты
+      </h2>
+      {% if test_results %}
+        <div class="table-container">
+          <table class="table is-fullwidth is-striped">
+            <thead>
+              <tr>
+                <th>Сотрудник</th>
+                <th>Тест</th>
+                <th>Курс</th>
+                <th>Результат</th>
+                <th>Статус</th>
+                <th>Дата</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for result in test_results %}
+              <tr>
+                <td>
+                  <div class="media">
+                    <div class="media-left">
+                      <div class="icon">
+                        <i class="fas fa-user has-text-primary"></i>
+                      </div>
+                    </div>
+                    <div class="media-content">
+                      <p class="title is-6 mb-0">{{ result.employee.first_name }} {{ result.employee.last_name }}</p>
+                      <p class="subtitle is-7 has-text-grey">{{ result.employee.email }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <strong>{{ result.test.name }}</strong>
+                  <br>
+                  <small class="has-text-grey">{{ result.test.description[:50] if result.test.description }}{% if result.test.description and result.test.description|length > 50 %}...{% endif %}</small>
+                </td>
+                <td>
+                  <span class="tag is-info is-light">{{ result.test.course.subject.title }}</span>
+                </td>
+                <td>
+                  <span class="tag is-warning is-light is-medium">
+                    <strong>{{ result.score }} / {{ result.max_score }}</strong>
+                  </span>
+                </td>
+                <td>
+                  {% if result.passed %}
+                    <span class="tag is-success is-light">
+                      <i class="fas fa-check mr-1"></i>Зачтено
+                    </span>
+                  {% else %}
+                    <span class="tag is-danger is-light">
+                      <i class="fas fa-times mr-1"></i>Не зачтено
+                    </span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="has-text-grey is-small">{{ result.completed_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                </td>
+                <td>
+                  <a href="/test-results/{{ result.id }}" class="button is-small is-info is-light">
+                    <span class="icon">
+                      <i class="fas fa-eye"></i>
+                    </span>
+                    <span>Детали</span>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="box has-shadow has-text-centered">
+          <div class="mb-4">
+            <i class="fas fa-clipboard-list" style="font-size: 3rem; color: #ccc;"></i>
+          </div>
+          <p class="title is-4">Пока нет результатов тестов</p>
+          <p class="subtitle is-6 has-text-grey">Сотрудники еще не проходили тесты</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const currentPath = window.location.pathname;
+  document.querySelectorAll('.navbar-item').forEach(item => {
+    if (item.getAttribute('href') === currentPath) {
+      item.classList.add('is-active');
+    }
+  });
+});
+</script>
+</body>
+</html>
