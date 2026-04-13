@@ -7,6 +7,11 @@ def get_database_url() -> str:
     url = os.environ.get("DATABASE_URL")
 
     if not url:
+        # Логируем доступные переменные для отладки
+        available = {k: v for k, v in os.environ.items()
+                     if any(x in k.upper() for x in ['PG', 'POSTGRES', 'DB', 'DATABASE', 'URL'])}
+        print(f"⚠️  DATABASE_URL not set. Available DB-related env vars: {available}")
+
         # Railway может использовать отдельные переменные
         user = os.environ.get("PGUSER") or os.environ.get("POSTGRES_USER", "postgres")
         password = os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD", "")
@@ -19,7 +24,7 @@ def get_database_url() -> str:
         else:
             url = f"postgresql+psycopg2://{user}@{host}:{port}/{dbname}"
 
-        print(f"⚠️  DATABASE_URL not set, using fallback: {url.split('@')[-1]}")
+        print(f"⚠️  Using fallback URL: host={host}, port={port}, dbname={dbname}")
 
     # Railway использует postgresql:// — заменяем на psycopg2
     if url.startswith("postgresql://"):
