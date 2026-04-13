@@ -1,5 +1,5 @@
-from fastapi import FastAPI, Request, Depends, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import FastAPI, Request, Depends, Form, HTTPException, UploadFile, File as FastAPIFile
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text, select
 import time
 import os
+import uuid
 import uvicorn
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
@@ -14,7 +15,7 @@ import logging
 import asyncio
 
 from database import get_db, engine
-from models import Base, Employee, Course, Enrollment, Exam, Grade, Subject, Judge, Department, Test, Question, TestResult, Answer, Case
+from models import Base, Employee, Course, Enrollment, Exam, Grade, Subject, Judge, Department, Test, Question, TestResult, Answer, Case, FileAttachment
 
 # Система уведомлений
 class Message:
@@ -83,13 +84,32 @@ if not os.path.exists("static"):
     os.makedirs("static")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Директория для загруженных файлов
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
+
+# Разрешенные типы файлов
+ALLOWED_EXTENSIONS = {
+    'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx',
+    'txt', 'rtf', 'csv', 'jpg', 'jpeg', 'png', 'gif', 'svg',
+    'zip', 'rar', '7z', 'mp4', 'avi', 'mov', 'mp3', 'wav'
+}
+
+MAX_FILE_SIZE = 50 * 1024 * 1024  # 50 MB
+
+def allowed_file(filename: str) -> bool:
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_file_extension(filename: str) -> str:
+    return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request, db: Session = Depends(get_db)):
     employees = db.execute(select(Employee)).scalars().all()
     courses = db.execute(select(Course)).scalars().all()
     departments = db.execute(select(Department)).scalars().all()
-    return templates.TemplateResponse("employees.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "employees.html", {
         "employees": employees,
         "courses": courses,
         "departments": departments
@@ -187,8 +207,7 @@ def transcript(request: Request, employee_id: int, db: Session = Depends(get_db)
     # Убираем дубликаты
     unique_exams = {exam.id: exam for exam in available_exams}.values()
 
-    return templates.TemplateResponse("transcript.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "transcript.html", {
         "employee": emp,
         "grades": grades,
         "available_exams": list(unique_exams)
@@ -247,8 +266,7 @@ def courses_view(request: Request, db: Session = Depends(get_db)):
     judges = db.execute(select(Judge)).scalars().all()
     departments = db.execute(select(Department)).scalars().all()
 
-    return templates.TemplateResponse("courses.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "courses.html", {
         "courses": courses,
         "subjects": subjects,
         "judges": judges,
@@ -275,8 +293,7 @@ def course_detail(request: Request, course_id: int, db: Session = Depends(get_db
         .order_by(Exam.date)
     ).scalars().all()
 
-    return templates.TemplateResponse("course_detail.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "course_detail.html", {
         "course": course,
         "exams": exams
     })
@@ -292,8 +309,7 @@ def departments_view(request: Request, db: Session = Depends(get_db)):
         .order_by(Department.name)
     ).scalars().all()
 
-    return templates.TemplateResponse("departments.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "departments.html", {
         "departments": departments
     })
 
@@ -394,8 +410,7 @@ def tests_view(request: Request, db: Session = Depends(get_db)):
         .order_by(Test.created_at.desc())
     ).scalars().all()
 
-    return templates.TemplateResponse("tests.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "tests.html", {
         "tests": tests
     })
 
@@ -415,8 +430,7 @@ def create_test_form(request: Request, db: Session = Depends(get_db)):
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
-    return templates.TemplateResponse("create_test.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "create_test.html", {
         "courses": courses
     })
 
@@ -480,8 +494,7 @@ def edit_test(request: Request, test_id: int, db: Session = Depends(get_db)):
         select(Question).where(Question.test_id == test_id).order_by(Question.order)
     ).scalars().all()
 
-    return templates.TemplateResponse("edit_test.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "edit_test.html", {
         "test": test,
         "questions": questions
     })
@@ -557,8 +570,7 @@ def test_detail(request: Request, test_id: int, db: Session = Depends(get_db)):
         select(Question).where(Question.test_id == test_id).order_by(Question.order)
     ).scalars().all()
 
-    return templates.TemplateResponse("test_detail.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "test_detail.html", {
         "test": test,
         "questions": questions
     })
@@ -574,8 +586,7 @@ def course_tests(request: Request, course_id: int, db: Session = Depends(get_db)
         select(Test).where(Test.course_id == course_id).order_by(Test.created_at.desc())
     ).scalars().all()
 
-    return templates.TemplateResponse("course_tests.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "course_tests.html", {
         "course": course,
         "tests": tests
     })
@@ -624,8 +635,7 @@ def take_test(request: Request, test_id: int, db: Session = Depends(get_db)):
         select(Question).where(Question.test_id == test_id).order_by(Question.order)
     ).scalars().all()
 
-    return templates.TemplateResponse("take_test.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "take_test.html", {
         "test": test,
         "questions": questions
     })
@@ -711,8 +721,7 @@ def register_form(
     # Получаем список отделов для выбора
     departments = db.execute(select(Department).order_by(Department.name)).scalars().all()
     
-    return templates.TemplateResponse("register.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "register.html", {
         "departments": departments,
         "role": role,
         "first_name": first_name,
@@ -814,9 +823,7 @@ def register(
 @app.get("/login", response_class=HTMLResponse)
 def login_form(request: Request, db: Session = Depends(get_db)):
     """Форма входа для сотрудников"""
-    return templates.TemplateResponse("login.html", {
-        "request": request
-    })
+    return templates.TemplateResponse(request, "login.html")
 
 @app.post("/login")
 def login(
@@ -855,9 +862,7 @@ def logout(request: Request):
 @app.get("/judge-login", response_class=HTMLResponse)
 def judge_login_form(request: Request, db: Session = Depends(get_db)):
     """Форма входа для судей"""
-    return templates.TemplateResponse("judge_login.html", {
-        "request": request
-    })
+    return templates.TemplateResponse(request, "judge_login.html")
 
 @app.post("/judge-login")
 def judge_login(
@@ -916,8 +921,7 @@ def judge_dashboard(request: Request, db: Session = Depends(get_db)):
         .order_by(Course.semester, Course.id)
     ).scalars().all()
 
-    return templates.TemplateResponse("judge_dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "judge_dashboard.html", {
         "courses": courses
     })
 
@@ -955,8 +959,7 @@ def judge_test_results(request: Request, db: Session = Depends(get_db)):
     passed_tests = sum(1 for r in test_results if r.passed)
     failed_tests = completed_tests - passed_tests
 
-    return templates.TemplateResponse("judge_test_results.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "judge_test_results.html", {
         "courses": judge_courses,
         "test_results": test_results,
         "total_tests": total_tests,
@@ -985,7 +988,7 @@ def require_roles(request: Request, allowed: List[str]):
 @app.get("/judicial/login", response_class=HTMLResponse)
 def judicial_login_page(request: Request):
     """Show role selection/login page for judicial system."""
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @app.post("/judicial/login")
@@ -1200,7 +1203,7 @@ def demo_judge_dashboard(request: Request):
         if db is not None:
             db.close()
 
-    return templates.TemplateResponse("judge_dashboard.html", {"request": request, "current_hearings": hearings, "assigned_cases": assigned, "judges": judges})
+    return templates.TemplateResponse(request, "judge_dashboard.html", {"current_hearings": hearings, "assigned_cases": assigned, "judges": judges})
 
 
 @app.get("/demo/case/{case_id}", response_class=HTMLResponse)
@@ -1218,7 +1221,7 @@ def demo_case_card(request: Request, case_id: int):
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    return templates.TemplateResponse("case_card.html", {"request": request, "case": case, "case_id": case_id})
+    return templates.TemplateResponse(request, "case_card.html", {"case": case, "case_id": case_id})
 
 
 @app.get("/api/cases")
@@ -1528,6 +1531,169 @@ def init_sample_data(db: Session = Depends(get_db)):
 @app.get("/law-tests", response_class=HTMLResponse)
 def law_tests():
     return RedirectResponse(url="/take-test/1", status_code=303)
+
+# ==========================================
+# Маршруты для работы с файлами
+# ==========================================
+
+def format_file_size(size_bytes: int) -> str:
+    """Форматирование размера файла"""
+    if size_bytes < 1024:
+        return f"{size_bytes} Б"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} КБ"
+    elif size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f} МБ"
+    else:
+        return f"{size_bytes / (1024 * 1024 * 1024):.1f} ГБ"
+
+@app.post("/upload-file")
+async def upload_file(
+    request: Request,
+    file: UploadFile = FastAPIFile(...),
+    entity_type: str = Form(...),  # course, case, test
+    entity_id: int = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Загрузка файла"""
+    # Проверка авторизации
+    employee_id = request.session.get("employee_id")
+    judge_id = request.session.get("judge_id")
+    
+    if not employee_id and not judge_id:
+        add_message(request, "Необходимо войти в систему", "is-danger")
+        return RedirectResponse(url='/login', status_code=303)
+
+    # Проверка имени файла
+    if not file.filename or not file.filename.strip():
+        add_message(request, "Неверное имя файла", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Проверка расширения
+    if not allowed_file(file.filename):
+        add_message(request, f"Неподдерживаемый тип файла. Разрешенные: {', '.join(sorted(ALLOWED_EXTENSIONS))}", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Проверка сущности
+    if entity_type == "course":
+        entity = db.get(Course, entity_id)
+        redirect_url = f"/course/{entity_id}"
+    elif entity_type == "case":
+        entity = db.get(Case, entity_id)
+        redirect_url = f"/cases/{entity_id}"
+    elif entity_type == "test":
+        entity = db.get(Test, entity_id)
+        redirect_url = f"/tests/{entity_id}/edit"
+    else:
+        add_message(request, "Неверный тип сущности", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    if not entity:
+        add_message(request, "Сущность не найдена", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Чтение файла и проверка размера
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        add_message(request, f"Файл слишком большой. Максимальный размер: {format_file_size(MAX_FILE_SIZE)}", "is-danger")
+        return RedirectResponse(url=redirect_url, status_code=303)
+
+    # Генерация уникального имени файла
+    ext = get_file_extension(file.filename)
+    stored_filename = f"{uuid.uuid4().hex}.{ext}"
+    file_path = os.path.join(UPLOAD_DIR, stored_filename)
+
+    # Сохранение файла
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    # Получение имени загрузившего
+    uploaded_by = None
+    if judge_id:
+        judge = db.get(Judge, judge_id)
+        uploaded_by = f"{judge.first_name} {judge.last_name}" if judge else None
+    elif employee_id:
+        employee = db.get(Employee, employee_id)
+        uploaded_by = f"{employee.first_name} {employee.last_name}" if employee else None
+
+    # Создание записи в БД
+    attachment = FileAttachment(
+        filename=file.filename,
+        stored_filename=stored_filename,
+        file_type=ext,
+        file_size=len(content),
+        course_id=entity_id if entity_type == "course" else None,
+        case_id=entity_id if entity_type == "case" else None,
+        test_id=entity_id if entity_type == "test" else None,
+        uploaded_by=uploaded_by
+    )
+    db.add(attachment)
+    db.commit()
+
+    add_message(request, f"Файл '{file.filename}' успешно загружен", "is-success")
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+@app.get("/download-file/{file_id}")
+def download_file(file_id: int, db: Session = Depends(get_db)):
+    """Скачивание файла"""
+    attachment = db.get(FileAttachment, file_id)
+    
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Файл не найден")
+
+    file_path = os.path.join(UPLOAD_DIR, attachment.stored_filename)
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Файл не найден на сервере")
+
+    return FileResponse(
+        path=file_path,
+        filename=attachment.filename,
+        media_type="application/octet-stream"
+    )
+
+@app.post("/delete-file/{file_id}")
+def delete_file(
+    request: Request,
+    file_id: int,
+    db: Session = Depends(get_db)
+):
+    """Удаление файла"""
+    # Проверка авторизации
+    employee_id = request.session.get("employee_id")
+    judge_id = request.session.get("judge_id")
+    
+    if not employee_id and not judge_id:
+        add_message(request, "Необходимо войти в систему", "is-danger")
+        return RedirectResponse(url='/login', status_code=303)
+
+    attachment = db.get(FileAttachment, file_id)
+    
+    if not attachment:
+        add_message(request, "Файл не найден", "is-danger")
+        return RedirectResponse(url='/', status_code=303)
+
+    # Определение URL для редиректа
+    if attachment.course_id:
+        redirect_url = f"/course/{attachment.course_id}"
+    elif attachment.case_id:
+        redirect_url = f"/cases/{attachment.case_id}"
+    elif attachment.test_id:
+        redirect_url = f"/tests/{attachment.test_id}/edit"
+    else:
+        redirect_url = '/'
+
+    # Удаление файла с диска
+    file_path = os.path.join(UPLOAD_DIR, attachment.stored_filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    # Удаление записи из БД
+    db.delete(attachment)
+    db.commit()
+
+    add_message(request, f"Файл '{attachment.filename}' удален", "is-info")
+    return RedirectResponse(url=redirect_url, status_code=303)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
