@@ -26,9 +26,14 @@
             <i class="fas fa-balance-scale"></i>
             <span>Судебный законодатель</span>
           </a>
+          <button class="navbar-burger" id="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </button>
         </div>
 
-        <div class="navbar-menu">
+        <div class="navbar-menu" id="navbar-menu">
           <div class="navbar-start">
             <a class="navbar-item" href="/">
               <i class="fas fa-users"></i>
@@ -42,7 +47,7 @@
               <i class="fas fa-building"></i>
               <span>Отделы</span>
             </a>
-            
+
             <!-- Judge Navigation -->
             {% if request.session.user_role == "judge" %}
               <a class="navbar-item" href="/tests">
@@ -58,7 +63,7 @@
                 <span>Результаты</span>
               </a>
             {% endif %}
-            
+
             <!-- Employee Navigation -->
             {% if request.session.employee_id %}
               <a class="navbar-item" href="/tests">
@@ -233,6 +238,19 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      // Burger menu functionality
+      const burger = document.getElementById('navbar-burger');
+      const menu = document.getElementById('navbar-menu');
+      
+      if (burger && menu) {
+        burger.addEventListener('click', () => {
+          burger.classList.toggle('active');
+          menu.classList.toggle('active');
+          const expanded = burger.getAttribute('aria-expanded') === 'true';
+          burger.setAttribute('aria-expanded', !expanded);
+        });
+      }
+
       // Auto-hide notifications after 5 seconds
       const notifications = document.querySelectorAll('.notification');
       notifications.forEach((notification, index) => {
