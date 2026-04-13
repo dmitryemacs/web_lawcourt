@@ -2796,8 +2796,234 @@ a:hover {
 }
 
 /* ============================================
-   GRID & LAYOUT UTILITIES
+   PAGE LAYOUTS - Employees, Courses, etc.
    ============================================ */
+
+/* Page Layout with Sidebar */
+.page-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.page-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-main {
+  min-width: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Form Rows for Employees */
+.employee-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.employee-form .form-submit {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
+
+.form-submit {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+/* Table Responsive */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -1.5rem;
+  padding: 0 1.5rem;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--gray-100);
+  border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: var(--gray-400);
+  border-radius: 3px;
+}
+
+/* Table Cell Styles */
+.cell-subject {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cell-judge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.cell-judge i {
+  font-size: 0.875rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+/* Title Sizes for Mobile */
+.title.is-3-mobile {
+  font-size: 1.5rem;
+}
+
+.title.is-4-mobile {
+  font-size: 1.125rem;
+}
+
+/* Fullwidth Button for Mobile */
+.is-fullwidth-mobile {
+  width: auto;
+}
+
+@media screen and (max-width: 1024px) {
+  .page-layout {
+    grid-template-columns: 320px 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Tablet - Stack sidebar and main */
+@media screen and (max-width: 768px) {
+  .page-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .page-sidebar {
+    gap: 1rem;
+  }
+
+  .employee-form .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .employee-form .form-row .field {
+    margin-bottom: 1rem;
+  }
+
+  .table-responsive {
+    margin: 0 -0.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .dashboard-stat {
+    padding: 0.875rem;
+  }
+
+  .dashboard-stat-value {
+    font-size: 1.5rem;
+  }
+
+  .dashboard-stat-label {
+    font-size: 0.75rem;
+  }
+
+  .dashboard-stat-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.25rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .title.is-3-mobile {
+    font-size: 1.375rem;
+  }
+
+  .title.is-4-mobile {
+    font-size: 1rem;
+  }
+
+  .box {
+    padding: 1rem;
+  }
+
+  .table {
+    font-size: 0.875rem;
+  }
+
+  .table thead th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .table tbody td {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .is-fullwidth-mobile {
+    width: 100%;
+  }
+}
+
+/* Mobile - 480px */
+@media screen and (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .table thead th {
+    padding: 0.625rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+
+  .table tbody td {
+    padding: 0.625rem 0.5rem;
+  }
+
+  .box {
+    padding: 0.875rem;
+  }
+
+  .title.is-3-mobile {
+    font-size: 1.25rem;
+  }
+
+  .title.is-4-mobile {
+    font-size: 0.9375rem;
+  }
+}
 
 /* Columns System */
 .columns {

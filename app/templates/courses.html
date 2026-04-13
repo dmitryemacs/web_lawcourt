@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="columns is-multiline">
+<div class="page-layout">
   <!-- Left Column - Forms -->
-  <div class="column is-one-third">
+  <div class="page-sidebar">
     <!-- Add Course Form -->
-    <div class="box has-shadow">
-      <h3 class="title is-4 has-text-primary">
-        <i class="fas fa-plus-circle mr-2"></i>
+    <div class="box has-shadow mb-4">
+      <h3 class="title is-4-mobile has-text-primary">
+        <i class="fas fa-plus-circle"></i>
         Добавить курс
       </h3>
       <form method="post" action="/courses/add">
@@ -79,11 +79,11 @@
           </div>
         </div>
 
-        <div class="field mt-4">
+        <div class="field form-submit">
           <div class="control">
-            <button class="button is-primary is-fullwidth is-medium" type="submit">
-              <i class="fas fa-plus mr-2"></i>
-              Добавить курс
+            <button class="button is-primary is-fullwidth-mobile" type="submit">
+              <i class="fas fa-plus"></i>
+              <span>Добавить курс</span>
             </button>
           </div>
         </div>
@@ -91,9 +91,9 @@
     </div>
 
     <!-- Add Judge Form -->
-    <div class="box has-shadow mt-4">
-      <h3 class="title is-4 has-text-success">
-        <i class="fas fa-gavel mr-2"></i>
+    <div class="box has-shadow mb-4">
+      <h3 class="title is-4-mobile has-text-success">
+        <i class="fas fa-gavel"></i>
         Добавить судью
       </h3>
       <form method="post" action="/judges/add">
@@ -124,11 +124,11 @@
             </span>
           </div>
         </div>
-        <div class="field mt-4">
+        <div class="field form-submit">
           <div class="control">
-            <button class="button is-success is-fullwidth is-medium" type="submit">
-              <i class="fas fa-plus mr-2"></i>
-              Добавить судью
+            <button class="button is-success is-fullwidth-mobile" type="submit">
+              <i class="fas fa-plus"></i>
+              <span>Добавить судью</span>
             </button>
           </div>
         </div>
@@ -136,9 +136,9 @@
     </div>
 
     <!-- Add Subject Form -->
-    <div class="box has-shadow mt-4">
-      <h3 class="title is-4 has-text-warning">
-        <i class="fas fa-book mr-2"></i>
+    <div class="box has-shadow mb-4">
+      <h3 class="title is-4-mobile has-text-warning">
+        <i class="fas fa-book"></i>
         Добавить предмет
       </h3>
       <form method="post" action="/subjects/add">
@@ -166,11 +166,11 @@
             <textarea class="textarea" name="description" placeholder="Краткое описание предмета..."></textarea>
           </div>
         </div>
-        <div class="field mt-4">
+        <div class="field form-submit">
           <div class="control">
-            <button class="button is-warning is-fullwidth is-medium" type="submit">
-              <i class="fas fa-plus mr-2"></i>
-              Добавить предмет
+            <button class="button is-warning is-fullwidth-mobile" type="submit">
+              <i class="fas fa-plus"></i>
+              <span>Добавить предмет</span>
             </button>
           </div>
         </div>
@@ -179,25 +179,21 @@
   </div>
 
   <!-- Right Column - Courses List -->
-  <div class="column">
+  <div class="page-main">
     <div class="box has-shadow">
-      <div class="level">
-        <div class="level-left">
-          <h3 class="title is-4">
-            <i class="fas fa-book-open mr-2"></i>
-            Список курсов
-          </h3>
-        </div>
-        <div class="level-right">
-          <span class="tag is-primary is-medium">
-            <i class="fas fa-book mr-1"></i>
-            Всего: {{courses|length}}
-          </span>
-        </div>
+      <div class="page-header">
+        <h3 class="title is-4-mobile">
+          <i class="fas fa-book-open"></i>
+          Список курсов
+        </h3>
+        <span class="tag is-primary is-medium">
+          <i class="fas fa-book"></i>
+          Всего: {{courses|length}}
+        </span>
       </div>
 
       {% if courses %}
-      <div class="table-container">
+      <div class="table-responsive">
         <table class="table is-fullwidth is-striped is-hoverable">
           <thead>
             <tr>
@@ -215,21 +211,15 @@
             <tr>
               <td><strong>{{c.id}}</strong></td>
               <td>
-                <span class="icon-text">
-                  <span class="icon has-text-primary">
-                    <i class="fas fa-book"></i>
-                  </span>
+                <div class="cell-subject">
                   <span>{{c.subject.title}}</span>
-                </span>
-                <br>
-                <span class="tag is-light is-small">{{c.subject.code}}</span>
+                  <span class="tag is-light is-small">{{c.subject.code}}</span>
+                </div>
               </td>
               <td>
                 {% if c.judge %}
-                  <span class="icon-text">
-                    <span class="icon has-text-success">
-                      <i class="fas fa-gavel"></i>
-                    </span>
+                  <span class="cell-judge">
+                    <i class="fas fa-gavel has-text-success"></i>
                     <span>{{c.judge.first_name}} {{c.judge.last_name}}</span>
                   </span>
                 {% else %}
@@ -239,32 +229,21 @@
               <td>
                 {% if c.department %}
                   <span class="tag is-info">
-                    <i class="fas fa-building mr-1"></i>
                     {{c.department.name}}
                   </span>
                 {% else %}
                   <span class="tag is-light">Общий</span>
                 {% endif %}
               </td>
-              <td>
-                <span class="icon-text">
-                  <span class="icon has-text-info">
-                    <i class="fas fa-calendar-alt"></i>
-                  </span>
-                  <span>{{c.semester}}</span>
-                </span>
-              </td>
+              <td>{{c.semester}}</td>
               <td>
                 <span class="tag is-warning">
-                  <i class="fas fa-graduation-cap mr-1"></i>
                   {{c.credits}}
                 </span>
               </td>
               <td>
-                <a class="button is-small is-info is-light" href="/course/{{c.id}}">
-                  <span class="icon">
-                    <i class="fas fa-eye"></i>
-                  </span>
+                <a class="button is-small is-info is-light is-fullwidth-mobile" href="/course/{{c.id}}">
+                  <i class="fas fa-eye"></i>
                   <span>Детали</span>
                 </a>
               </td>
@@ -282,33 +261,27 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="columns mt-4">
-      <div class="column">
-        <div class="dashboard-stat">
-          <div class="dashboard-stat-icon is-primary">
-            <i class="fas fa-book"></i>
-          </div>
-          <div class="dashboard-stat-value">{{courses|length}}</div>
-          <div class="dashboard-stat-label">Всего курсов</div>
+    <div class="stats-grid">
+      <div class="dashboard-stat">
+        <div class="dashboard-stat-icon is-primary">
+          <i class="fas fa-book"></i>
         </div>
+        <div class="dashboard-stat-value">{{courses|length}}</div>
+        <div class="dashboard-stat-label">Всего курсов</div>
       </div>
-      <div class="column">
-        <div class="dashboard-stat">
-          <div class="dashboard-stat-icon is-success">
-            <i class="fas fa-gavel"></i>
-          </div>
-          <div class="dashboard-stat-value">{{judges|length}}</div>
-          <div class="dashboard-stat-label">Судей</div>
+      <div class="dashboard-stat">
+        <div class="dashboard-stat-icon is-success">
+          <i class="fas fa-gavel"></i>
         </div>
+        <div class="dashboard-stat-value">{{judges|length}}</div>
+        <div class="dashboard-stat-label">Судей</div>
       </div>
-      <div class="column">
-        <div class="dashboard-stat">
-          <div class="dashboard-stat-icon is-info">
-            <i class="fas fa-bookmark"></i>
-          </div>
-          <div class="dashboard-stat-value">{{subjects|length}}</div>
-          <div class="dashboard-stat-label">Предметов</div>
+      <div class="dashboard-stat">
+        <div class="dashboard-stat-icon is-info">
+          <i class="fas fa-bookmark"></i>
         </div>
+        <div class="dashboard-stat-value">{{subjects|length}}</div>
+        <div class="dashboard-stat-label">Предметов</div>
       </div>
     </div>
   </div>
