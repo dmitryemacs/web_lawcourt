@@ -1,0 +1,10 @@
+.git
+.gitignore
+.vscode
+.env
+__pycache__
+*.pyc
+*.pyo
+*.md
+uploads/
+*.egg-info
