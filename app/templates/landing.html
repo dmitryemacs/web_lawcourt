@@ -573,38 +573,40 @@
   </div>
 
   <!-- AI Chat Floating Button -->
-  <button id="ai-chat-button" class="ai-chat-float-btn" title="AI Помощник">
+  <button id="ai-chat-button" class="ai-chat-float-btn" title="AI Помощник" onclick="document.getElementById('ai-chat-modal').classList.add('active'); return false;">
     <i class="fas fa-robot"></i>
   </button>
 
   <!-- AI Chat Modal -->
-  <div id="ai-chat-modal" class="modal">
-    <div class="modal-backdrop"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">
+  <div id="ai-chat-modal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:100000; align-items:center; justify-content:center;">
+    <div class="modal-backdrop" style="position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);" onclick="document.getElementById('ai-chat-modal').classList.remove('active');"></div>
+    <div class="modal-content" style="position:relative; background:white; border-radius:16px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); max-width:600px; width:90%; margin:0 auto; max-height:90vh; overflow:hidden; display:flex; flex-direction:column;">
+      <div class="modal-header" style="background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border-radius:16px 16px 0 0; padding:20px 24px; display:flex; align-items:center; justify-content:space-between;">
+        <h3 class="modal-title" style="color:white; font-size:1.25rem; font-weight:700; display:flex; align-items:center; gap:8px; margin:0;">
           <i class="fas fa-robot"></i>
           AI Помощник
         </h3>
-        <button id="ai-chat-close" class="modal-close" aria-label="close">
+        <button id="ai-chat-close" class="modal-close" onclick="document.getElementById('ai-chat-modal').classList.remove('active');" style="background:rgba(255,255,255,0.2); border:none; width:32px; height:32px; border-radius:50%; cursor:pointer; color:white; font-size:16px; display:flex; align-items:center; justify-content:center;">
           <i class="fas fa-times"></i>
         </button>
       </div>
-      <div class="modal-body">
-        <div id="ai-messages" class="chat-messages">
-          <div class="chat-message chat-message-assistant">
-            <div class="message-icon">
+      <div class="modal-body" style="padding:24px; overflow-y:auto; flex:1;">
+        <div id="ai-messages" class="chat-messages" style="max-height:400px; overflow-y:auto; padding:16px; background:#f9fafb; border-radius:8px; margin-bottom:16px;">
+          <div class="chat-message chat-message-assistant" style="display:flex; gap:12px; margin-bottom:16px;">
+            <div class="message-icon" style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; background:#dbeafe; color:#3b82f6;">
               <i class="fas fa-robot"></i>
             </div>
-            <div class="message-text">Здравствуйте! Я AI-помощник. Задайте мне вопрос о платформе, и я постараюсь помочь.</div>
+            <div class="message-text" style="padding:12px 16px; border-radius:8px; max-width:80%; line-height:1.5; background:white; border:1px solid #e5e7eb;">
+              Здравствуйте! Я AI-помощник. Задайте мне вопрос о платформе, и я постараюсь помочь.
+            </div>
           </div>
         </div>
-        <form id="ai-chat-form" class="chat-form">
-          <div class="form-group">
-            <input id="ai-chat-input" class="form-input" placeholder="Задайте вопрос..." autocomplete="off" />
+        <form id="ai-chat-form" class="chat-form" onsubmit="return false;">
+          <div class="form-group" style="margin-bottom:16px;">
+            <input id="ai-chat-input" class="form-input" placeholder="Задайте вопрос..." autocomplete="off" style="width:100%; padding:12px 16px; font-size:16px; border:2px solid #e5e7eb; border-radius:8px;" />
           </div>
-          <div class="form-group">
-            <button class="btn btn-primary btn-full" type="submit">
+          <div class="form-group" style="margin-bottom:16px;">
+            <button class="btn btn-primary btn-full" type="submit" onclick="sendMessage()" style="width:100%; padding:12px 24px; background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none; border-radius:8px; font-weight:600; cursor:pointer; font-size:16px;">
               <i class="fas fa-paper-plane"></i>
               Отправить
             </button>
@@ -885,157 +887,95 @@
   </style>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      console.log('DOM loaded');
-      
-      // Burger menu functionality
-      const burger = document.getElementById('navbar-burger');
-      const menu = document.getElementById('navbar-menu');
-
-      if (burger && menu) {
-        burger.addEventListener('click', () => {
-          burger.classList.toggle('active');
-          menu.classList.toggle('active');
-          const expanded = burger.getAttribute('aria-expanded') === 'true';
-          burger.setAttribute('aria-expanded', !expanded);
-        });
-      }
-
-      // AI Chat functionality
-      const chatButton = document.getElementById('ai-chat-button');
-      const chatButtonNav = document.getElementById('ai-chat-open-nav');
-      const chatModal = document.getElementById('ai-chat-modal');
-      const chatClose = document.getElementById('ai-chat-close');
-      const chatForm = document.getElementById('ai-chat-form');
+    // Send message function
+    function sendMessage() {
       const chatInput = document.getElementById('ai-chat-input');
       const messagesContainer = document.getElementById('ai-messages');
+      const message = chatInput.value.trim();
+      if (!message) return;
 
-      console.log('Chat elements:', {
-        chatButton: !!chatButton,
-        chatModal: !!chatModal,
-        chatClose: !!chatClose,
-        chatForm: !!chatForm,
-        chatInput: !!chatInput
+      // Add user message
+      addMessage(message, 'user');
+      chatInput.value = '';
+
+      // Add loading state
+      const loadingMsg = addMessage('Печатает', 'assistant', true);
+
+      fetch('/ai-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message }),
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (loadingMsg && loadingMsg.parentNode) loadingMsg.remove();
+        addMessage(data.reply || data.error || 'Ошибка', 'assistant');
+      })
+      .catch(error => {
+        if (loadingMsg && loadingMsg.parentNode) loadingMsg.remove();
+        addMessage('Ошибка соединения', 'error');
       });
+    }
 
-      // Open chat from floating button
-      if (chatButton && chatModal) {
-        chatButton.addEventListener('click', () => {
-          console.log('Chat button clicked');
-          chatModal.classList.add('active');
-          if (chatInput) {
-            setTimeout(() => chatInput.focus(), 100);
+    function addMessage(text, role, isLoading = false) {
+      const messagesContainer = document.getElementById('ai-messages');
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `chat-message chat-message-${role}`;
+      messageDiv.style.cssText = `display:flex; gap:12px; margin-bottom:16px; ${role === 'user' ? 'flex-direction:row-reverse;' : ''} ${isLoading ? 'opacity:0.6;' : ''}`;
+
+      const iconBg = role === 'user' ? 'background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white;' : role === 'error' ? 'background:#fee2e2; color:#ef4444;' : 'background:#dbeafe; color:#3b82f6;';
+      const icon = role === 'user' ? 'fa-user' : role === 'error' ? 'fa-exclamation-triangle' : 'fa-robot';
+      const textBg = role === 'user' ? 'background:linear-gradient(135deg, #667eea 0%, #764ba2 100%); color:white; border:none;' : role === 'error' ? 'background:#fee2e2; color:#991b1b; border:1px solid #fecaca;' : 'background:white; border:1px solid #e5e7eb;';
+
+      messageDiv.innerHTML = `
+        <div class="message-icon" style="width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:14px; ${iconBg}">
+          <i class="fas ${icon}"></i>
+        </div>
+        <div class="message-text" style="padding:12px 16px; border-radius:8px; max-width:80%; line-height:1.5; ${textBg}">${text}${isLoading ? '...' : ''}</div>
+      `;
+
+      messagesContainer.appendChild(messageDiv);
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      return messageDiv;
+    }
+
+    // Form submit handler
+    document.addEventListener('DOMContentLoaded', () => {
+      const chatForm = document.getElementById('ai-chat-form');
+      if (chatForm) {
+        chatForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          sendMessage();
+        });
+      }
+
+      // Enter key in input
+      const chatInput = document.getElementById('ai-chat-input');
+      if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            sendMessage();
           }
-        });
-      }
-
-      // Open chat from nav button
-      if (chatButtonNav && chatModal) {
-        chatButtonNav.addEventListener('click', () => {
-          console.log('Nav chat button clicked');
-          chatModal.classList.add('active');
-          if (chatInput) {
-            setTimeout(() => chatInput.focus(), 100);
-          }
-        });
-      }
-
-      // Close chat
-      if (chatClose && chatModal) {
-        chatClose.addEventListener('click', () => {
-          chatModal.classList.remove('active');
-        });
-      }
-
-      // Close on backdrop click
-      if (chatModal) {
-        const backdrop = chatModal.querySelector('.modal-backdrop');
-        if (backdrop) {
-          backdrop.addEventListener('click', () => {
-            chatModal.classList.remove('active');
-          });
         });
       }
 
       // Close on Escape
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && chatModal && chatModal.classList.contains('active')) {
-          chatModal.classList.remove('active');
+        if (e.key === 'Escape') {
+          document.getElementById('ai-chat-modal').classList.remove('active');
         }
       });
 
-      // Send message
-      if (chatForm && chatInput && messagesContainer) {
-        chatForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const message = chatInput.value.trim();
-          if (!message) return;
-
-          // Add user message
-          addMessage(message, 'user');
-          chatInput.value = '';
-
-          // Add loading state
-          const loadingMsg = addMessage('Печатает', 'assistant', true);
-
-          try {
-            const response = await fetch('/ai-chat', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ message }),
-            });
-
-            // Remove loading message
-            if (loadingMsg && loadingMsg.parentNode) {
-              loadingMsg.remove();
-            }
-
-            const data = await response.json();
-            if (response.ok) {
-              addMessage(data.reply, 'assistant');
-            } else {
-              addMessage(data.detail || 'Извините, произошла ошибка. Попробуйте позже.', 'error');
-            }
-          } catch (error) {
-            // Remove loading message
-            if (loadingMsg && loadingMsg.parentNode) {
-              loadingMsg.remove();
-            }
-            console.error('Chat error:', error);
-            addMessage('Ошибка соединения. Проверьте подключение к интернету.', 'error');
-          }
+      // Burger menu
+      const burger = document.getElementById('navbar-burger');
+      const menu = document.getElementById('navbar-menu');
+      if (burger && menu) {
+        burger.addEventListener('click', () => {
+          burger.classList.toggle('active');
+          menu.classList.toggle('active');
         });
       }
-
-      function addMessage(text, role, isLoading = false) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message chat-message-${role}${isLoading ? ' loading' : ''}`;
-        
-        const iconClass = role === 'user' ? 'fa-user' : role === 'error' ? 'fa-exclamation-triangle' : 'fa-robot';
-        
-        messageDiv.innerHTML = `
-          <div class="message-icon">
-            <i class="fas ${iconClass}"></i>
-          </div>
-          <div class="message-text">${text}</div>
-        `;
-        
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        
-        return messageDiv;
-      }
-
-      // Highlight active navigation item
-      const currentPath = window.location.pathname;
-      document.querySelectorAll('.navbar-item').forEach(item => {
-        const href = item.getAttribute('href');
-        if (href && (href === currentPath || (href !== '/' && currentPath.startsWith(href)))) {
-          item.classList.add('active');
-        }
-      });
     });
   </script>
 </body>
