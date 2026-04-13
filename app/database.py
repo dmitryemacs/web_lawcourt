@@ -2,10 +2,30 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import os
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+def get_database_url() -> str:
+    """Получить DATABASE_URL и привести к формату SQLAlchemy"""
+    url = os.environ.get("DATABASE_URL")
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+    if not url:
+        # Railway может использовать отдельные переменные
+        user = os.environ.get("PGUSER") or os.environ.get("POSTGRES_USER", "postgres")
+        password = os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD", "")
+        host = os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST", "localhost")
+        port = os.environ.get("PGPORT") or os.environ.get("POSTGRES_PORT", "5432")
+        dbname = os.environ.get("PGDATABASE") or os.environ.get("POSTGRES_DB", "university")
+
+        if password:
+            url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
+        else:
+            url = f"postgresql+psycopg2://{user}@{host}:{port}/{dbname}"
+
+    # Railway использует postgresql:// — заменяем на psycopg2
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+    return url
+
+DATABASE_URL = get_database_url()
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

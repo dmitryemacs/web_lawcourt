@@ -22,10 +22,10 @@ ENV PYTHONUNBUFFERED=1
 
 COPY ./static /app/static
 
-# Создаём директорию для загруженных файлов
-RUN mkdir -p /app/uploads
+# Копируем и делаем исполняемым startup скрипт
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
 
 EXPOSE 8000
 
-# Продакшен: без --reload, больше воркеров
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["/app/start.sh"]
