@@ -19,6 +19,8 @@ def get_database_url() -> str:
         else:
             url = f"postgresql+psycopg2://{user}@{host}:{port}/{dbname}"
 
+        print(f"⚠️  DATABASE_URL not set, using fallback: {url.split('@')[-1]}")
+
     # Railway использует postgresql:// — заменяем на psycopg2
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
@@ -26,6 +28,7 @@ def get_database_url() -> str:
     return url
 
 DATABASE_URL = get_database_url()
+print(f"🔗 Connecting to database: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'UNKNOWN'}")
 
 engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)

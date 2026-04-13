@@ -53,7 +53,7 @@ def wait_for_db():
                 print("✅ Database connection successful!")
                 return True
         except Exception as e:
-            print(f"⏳ Waiting for database... (Attempt {i+1}/{max_retries})")
+            print(f"⏳ Waiting for database... (Attempt {i+1}/{max_retries}): {e}")
             time.sleep(retry_interval)
 
     print("❌ Could not connect to database after multiple attempts")
@@ -85,7 +85,7 @@ if not os.path.exists("static"):
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Директория для загруженных файлов
-UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads")
+UPLOAD_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 if not os.path.exists(UPLOAD_DIR):
     os.makedirs(UPLOAD_DIR)
 
