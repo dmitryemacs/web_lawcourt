@@ -7,7 +7,7 @@
         <div class="level-item">
           <h2 class="title has-text-primary">
             <i class="fas fa-file-alt mr-2"></i>
-            Транскрипт: {{student.first_name}} {{student.last_name}}
+            Транскрипт: {{employee.first_name}} {{employee.last_name}}
           </h2>
         </div>
       </div>
@@ -32,16 +32,16 @@
         </h4>
         <div class="content is-small">
           <p>
-            <strong>Группа:</strong><br>
-            {{student.group.name if student.group else 'Не назначена'}}
+            <strong>Отдел:</strong><br>
+            {{employee.department.name if employee.department else 'Не назначен'}}
           </p>
           <p>
             <strong>Email:</strong><br>
-            {{student.email or '-'}}
+            {{employee.email or '-'}}
           </p>
           <p>
-            <strong>Дата поступления:</strong><br>
-            {{student.enroll_date.strftime('%Y-%m-%d') if student.enroll_date else '-'}}
+            <strong>Дата найма:</strong><br>
+            {{employee.hire_date.strftime('%Y-%m-%d') if employee.hire_date else '-'}}
           </p>
         </div>
       </div>
@@ -96,7 +96,7 @@
           Поставить оценку
         </h3>
         <form method="post" action="/grade">
-          <input type="hidden" name="student_id" value="{{student.id}}"/>
+          <input type="hidden" name="employee_id" value="{{employee.id}}"/>
           <div class="field">
             <label class="label">
               <i class="fas fa-graduation-cap mr-2"></i>
