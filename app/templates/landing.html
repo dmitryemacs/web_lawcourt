@@ -572,12 +572,10 @@
     </footer>
   </div>
 
-  <!-- AI Chat Floating Button - Only show for guests -->
-  {% if not request.session.employee_id and not request.session.user_role == "judge" %}
+  <!-- AI Chat Floating Button -->
   <button id="ai-chat-button" class="ai-chat-float-btn" title="AI Помощник">
     <i class="fas fa-robot"></i>
   </button>
-  {% endif %}
 
   <!-- AI Chat Modal -->
   <div id="ai-chat-modal" class="modal">

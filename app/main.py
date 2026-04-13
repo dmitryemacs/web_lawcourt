@@ -1135,10 +1135,6 @@ async def ai_chat(request: Request):
     if len(user_message) > 2000:
         raise HTTPException(status_code=400, detail="Message too long (max 2000 characters)")
 
-    # Require authenticated user (employee or judge)
-    if not (request.session.get("employee_id") or request.session.get("judge_id")):
-        raise HTTPException(status_code=403, detail="Authentication required to use AI chat")
-
     # Read configuration from environment
     api_key = os.environ.get("OPENROUTER_API_KEY")
     # Use configured model, or default to glm-4.5-air:free
