@@ -1143,7 +1143,8 @@ async def ai_chat(request: Request):
     api_key = os.environ.get("OPENROUTER_API_KEY")
     model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
     site_url = os.environ.get("SITE_URL", "http://localhost:8000")
-    site_name = os.environ.get("SITE_NAME", "Судебный законодатель")
+    # Use ASCII-only site name to avoid encoding issues with OpenRouter headers
+    site_name = os.environ.get("SITE_NAME", "Judicial Platform")
 
     if not api_key:
         raise HTTPException(status_code=503, detail="OpenRouter API key not configured (OPENROUTER_API_KEY)")
@@ -1159,11 +1160,20 @@ async def ai_chat(request: Request):
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key
         )
-        
+
         # Call OpenRouter API via OpenAI SDK
         response = client.chat.completions.create(
             model=model,
             messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful assistant for a judicial education platform called 'Судебный законодатель' "
+                        "(Judicial Legislator). The platform is used for managing employees, courses, tests, and "
+                        "judicial case management. Answer questions in the same language the user writes in. "
+                        "Be concise and helpful. If asked about technical issues, provide practical advice."
+                    )
+                },
                 {"role": "user", "content": user_message}
             ],
             temperature=0.7,
