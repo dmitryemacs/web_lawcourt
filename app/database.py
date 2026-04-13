@@ -7,28 +7,34 @@ def get_database_url() -> str:
     url = os.environ.get("DATABASE_URL")
 
     if not url:
-        # Логируем доступные переменные для отладки
-        available = {k: v for k, v in os.environ.items()
-                     if any(x in k.upper() for x in ['PG', 'POSTGRES', 'DB', 'DATABASE', 'URL'])}
-        print(f"⚠️  DATABASE_URL not set. Available DB-related env vars: {available}")
-
-        # Railway может использовать отдельные переменные
-        user = os.environ.get("PGUSER") or os.environ.get("POSTGRES_USER", "postgres")
-        password = os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD", "")
-        host = os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST", "localhost")
+        # Railway предоставляет отдельные переменные для PostgreSQL
+        user = os.environ.get("PGUSER") or os.environ.get("POSTGRES_USER")
+        password = os.environ.get("PGPASSWORD") or os.environ.get("POSTGRES_PASSWORD")
+        host = os.environ.get("PGHOST") or os.environ.get("POSTGRES_HOST")
         port = os.environ.get("PGPORT") or os.environ.get("POSTGRES_PORT", "5432")
-        dbname = os.environ.get("PGDATABASE") or os.environ.get("POSTGRES_DB", "university")
+        dbname = os.environ.get("PGDATABASE") or os.environ.get("POSTGRES_DB")
 
-        if password:
+        # Если есть все необходимые переменные, создаём URL
+        if all([user, password, host, dbname]):
             url = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{dbname}"
+            print(f"✅ Using Railway environment variables for database connection")
         else:
-            url = f"postgresql+psycopg2://{user}@{host}:{port}/{dbname}"
-
-        print(f"⚠️  Using fallback URL: host={host}, port={port}, dbname={dbname}")
+            # Логируем доступные переменные для отладки
+            available = {k: v for k, v in os.environ.items()
+                         if any(x in k.upper() for x in ['PG', 'POSTGRES', 'DB', 'DATABASE', 'URL'])}
+            print(f"❌ DATABASE_URL not set and environment variables incomplete. Available: {available}")
+            raise ValueError(
+                "DATABASE_URL is not set and required environment variables "
+                "(PGUSER/POSTGRES_USER, PGPASSWORD/POSTGRES_PASSWORD, PGHOST/POSTGRES_HOST, PGDATABASE/POSTGRES_DB) "
+                "are not provided. On Railway, ensure you've connected a PostgreSQL database to your project."
+            )
 
     # Railway использует postgresql:// — заменяем на psycopg2
     if url.startswith("postgresql://"):
         url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+    elif url.startswith("postgres://"):
+        # Старый формат Railway
+        url = url.replace("postgres://", "postgresql+psycopg2://", 1)
 
     return url
 
