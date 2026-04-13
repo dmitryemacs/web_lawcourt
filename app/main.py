@@ -1141,7 +1141,8 @@ async def ai_chat(request: Request):
 
     # Read configuration from environment
     api_key = os.environ.get("OPENROUTER_API_KEY")
-    model = os.environ.get("OPENROUTER_MODEL", "openai/gpt-3.5-turbo")
+    # Use a more reliable free model by default
+    model = os.environ.get("OPENROUTER_MODEL", "meta-llama/llama-3.2-3b-instruct:free")
     site_url = os.environ.get("SITE_URL", "http://localhost:8000")
     # Use ASCII-only site name to avoid encoding issues with OpenRouter headers
     site_name = os.environ.get("SITE_NAME", "Judicial Platform")
