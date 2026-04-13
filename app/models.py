@@ -3,6 +3,26 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
 
+class FileAttachment(Base):
+    __tablename__ = "file_attachments"
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, index=True)  # оригинальное имя файла
+    stored_filename = Column(String, unique=True)  # уникальное имя на диске
+    file_type = Column(String)  # MIME тип или расширение
+    file_size = Column(Integer)  # размер в байтах
+    uploaded_at = Column(DateTime, default=func.now())
+    
+    # Привязка к разным сущностям
+    course_id = Column(Integer, ForeignKey("courses.id"), nullable=True)
+    case_id = Column(Integer, ForeignKey("cases.id"), nullable=True)
+    test_id = Column(Integer, ForeignKey("tests.id"), nullable=True)
+    uploaded_by = Column(String, nullable=True)  # email или имя загрузившего
+    
+    # Relationships
+    course = relationship("Course", back_populates="attachments")
+    case = relationship("Case", back_populates="attachments")
+    test = relationship("Test", back_populates="attachments")
+
 class Employee(Base):
     __tablename__ = "employees"
     id = Column(Integer, primary_key=True, index=True)
@@ -14,6 +34,7 @@ class Employee(Base):
     department = relationship("Department", back_populates="employees")
     grades = relationship("Grade", back_populates="employee")
     enrollments = relationship("Enrollment", back_populates="employee")
+    test_results = relationship("TestResult")
 
 class Course(Base):
     __tablename__ = "courses"
@@ -29,6 +50,7 @@ class Course(Base):
     enrollments = relationship("Enrollment", back_populates="course")
     exams = relationship("Exam", back_populates="course")
     tests = relationship("Test", back_populates="course")
+    attachments = relationship("FileAttachment", back_populates="course")
 
 class Test(Base):
     __tablename__ = "tests"
@@ -42,6 +64,7 @@ class Test(Base):
     course = relationship("Course", back_populates="tests")
     questions = relationship("Question", back_populates="test", order_by="Question.order")
     results = relationship("TestResult", back_populates="test")
+    attachments = relationship("FileAttachment", back_populates="test")
 
 class Question(Base):
     __tablename__ = "questions"
@@ -65,6 +88,7 @@ class TestResult(Base):
     passed = Column(Boolean, default=False)
     completed_at = Column(DateTime, default=func.now())
     test = relationship("Test", back_populates="results")
+    employee = relationship("Employee")
     answers = relationship("Answer", back_populates="result")
 
 class Answer(Base):
@@ -142,4 +166,6 @@ class Case(Base):
     is_video = Column(Boolean, default=False)
     judge_id = Column(Integer, ForeignKey("judges.id"), nullable=True)
     secretary = Column(String, nullable=True)
+    video_room_id = Column(String, nullable=True)
     judge = relationship("Judge")
+    attachments = relationship("FileAttachment", back_populates="case")
