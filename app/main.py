@@ -105,7 +105,18 @@ def get_file_extension(filename: str) -> str:
     return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, db: Session = Depends(get_db)):
+def home(request: Request):
+    """Главная страница - лендинг"""
+    return templates.TemplateResponse(request, "landing.html")
+
+@app.get("/employees", response_class=HTMLResponse)
+def employees_list(request: Request, db: Session = Depends(get_db)):
+    """Список сотрудников - доступно только авторизованным пользователям"""
+    # Проверяем авторизацию
+    if not request.session.get("employee_id") and request.session.get("user_role") != "judge":
+        add_message(request, "Для просмотра списка сотрудников необходимо войти в систему", "is-warning")
+        return RedirectResponse(url='/login', status_code=303)
+    
     employees = db.execute(select(Employee)).scalars().all()
     courses = db.execute(select(Course)).scalars().all()
     departments = db.execute(select(Department)).scalars().all()

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Судебный законодатель — Платформа управления</title>
+
+  <!-- Google Fonts - Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Modern Custom Styles -->
+  <link rel="stylesheet" href="/static/modern.css">
+
+  <style>
+    /* Landing Page Specific Styles */
+    .landing-hero {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 4rem 1.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .landing-hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .landing-hero::after {
+      content: '';
+      position: absolute;
+      bottom: -30%;
+      left: -10%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .landing-hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .landing-hero h1 {
+      color: white;
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.02em;
+    }
+
+    .landing-hero p {
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 1.25rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .landing-hero .btn {
+      font-size: 1.125rem;
+      padding: 1rem 2.5rem;
+      margin: 0.5rem;
+    }
+
+    .landing-features {
+      padding: 4rem 1.5rem;
+      background: white;
+    }
+
+    .landing-features h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      text-align: center;
+      padding: 2rem 1.5rem;
+      border-radius: var(--radius-lg);
+      background: var(--gray-50);
+      border: 1px solid var(--gray-200);
+      transition: all var(--transition);
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-xl);
+      border-color: var(--primary-light);
+    }
+
+    .feature-icon {
+      width: 4rem;
+      height: 4rem;
+      margin: 0 auto 1.5rem;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      color: white;
+    }
+
+    .feature-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 0.75rem;
+      color: var(--gray-900);
+    }
+
+    .feature-card p {
+      color: var(--gray-600);
+      line-height: 1.6;
+    }
+
+    .landing-how-it-works {
+      padding: 4rem 1.5rem;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    }
+
+    .landing-how-it-works h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .steps {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+
+    .step-number {
+      width: 3rem;
+      height: 3rem;
+      min-width: 3rem;
+      background: var(--primary-gradient);
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 1.5rem;
+    }
+
+    .step-content h3 {
+      margin-bottom: 0.5rem;
+      color: var(--gray-900);
+    }
+
+    .step-content p {
+      color: var(--gray-600);
+      margin: 0;
+    }
+
+    .landing-cta {
+      padding: 4rem 1.5rem;
+      background: var(--primary-gradient);
+      text-align: center;
+      color: white;
+    }
+
+    .landing-cta h2 {
+      color: white;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .landing-cta p {
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 1.125rem;
+      margin-bottom: 2rem;
+    }
+
+    .landing-cta .btn {
+      background: white;
+      color: var(--primary);
+      font-size: 1.125rem;
+      padding: 1rem 2.5rem;
+    }
+
+    .landing-cta .btn:hover {
+      background: var(--gray-100);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+    }
+
+    @media screen and (max-width: 768px) {
+      .landing-hero {
+        padding: 3rem 1rem;
+      }
+
+      .landing-hero h1 {
+        font-size: 1.75rem;
+      }
+
+      .landing-hero p {
+        font-size: 1rem;
+      }
+
+      .landing-hero .btn {
+        display: block;
+        width: 100%;
+        margin: 0.5rem 0;
+      }
+
+      .landing-features,
+      .landing-how-it-works,
+      .landing-cta {
+        padding: 3rem 1rem;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .step {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .landing-features h2,
+      .landing-how-it-works h2,
+      .landing-cta h2 {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <!-- Simple Top Navigation -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <div class="navbar-brand">
+          <a class="brand-link" href="/">
+            <i class="fas fa-balance-scale"></i>
+            <span>Судебный законодатель</span>
+          </a>
+        </div>
+
+        <div class="navbar-menu">
+          <div class="navbar-start"></div>
+
+          <div class="navbar-end">
+            <div class="navbar-actions">
+              {% if request.session.employee_id or request.session.user_role == "judge" %}
+                {% if request.session.employee_id %}
+                  <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home"></i>
+                    <span>Главная</span>
+                  </a>
+                {% endif %}
+                {% if request.session.user_role == "judge" %}
+                  <a href="/judge-dashboard" class="btn btn-info">
+                    <i class="fas fa-gavel"></i>
+                    <span>Панель судьи</span>
+                  </a>
+                {% endif %}
+                <a href="/logout" class="btn btn-warning">
+                  <i class="fas fa-sign-out-alt"></i>
+                  <span>Выйти</span>
+                </a>
+              {% else %}
+                <a href="/login" class="btn btn-primary">
+                  <i class="fas fa-sign-in-alt"></i>
+                  <span>Войти</span>
+                </a>
+                <a href="/register" class="btn btn-secondary">
+                  <i class="fas fa-user-plus"></i>
+                  <span>Регистрация</span>
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="landing-hero">
+      <div class="landing-hero-content">
+        <h1>
+          <i class="fas fa-balance-scale"></i>
+          Судебный законодатель
+        </h1>
+        <p>
+          Современная платформа для управления судебными делами, тестирования сотрудников 
+          и организации учебного процесса. Автоматизируйте рутинные задачи и сосредоточьтесь 
+          на важной работе.
+        </p>
+        <div>
+          {% if not request.session.employee_id and not request.session.user_role %}
+            <a href="/register" class="btn btn-primary">
+              <i class="fas fa-user-plus"></i>
+              Начать работу
+            </a>
+            <a href="/login" class="btn" style="background: rgba(255,255,255,0.2); color: white;">
+              <i class="fas fa-sign-in-alt"></i>
+              Войти
+            </a>
+          {% else %}
+            <a href="/employees" class="btn btn-primary">
+              <i class="fas fa-users"></i>
+              Сотрудники
+            </a>
+            <a href="/courses" class="btn" style="background: rgba(255,255,255,0.2); color: white;">
+              <i class="fas fa-book-open"></i>
+              Курсы
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="landing-features">
+      <h2>
+        <i class="fas fa-star"></i>
+        Возможности платформы
+      </h2>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>Управление сотрудниками</h3>
+          <p>
+            Ведите учёт сотрудников, их отделов и должностей. 
+            Быстрый поиск и фильтрация по всем параметрам.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <h3>Учебные курсы</h3>
+          <p>
+            Создавайте и управляйте курсами. Записывайте сотрудников 
+            на обучение и отслеживайте прогресс.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <h3>Тестирование</h3>
+          <p>
+            Создавайте тесты с различными типами вопросов. 
+            Автоматическая проверка и сохранение результатов.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-gavel"></i>
+          </div>
+          <h3>Панель судьи</h3>
+          <p>
+            Специализированный интерфейс для судей с управлением 
+            делами, расписанием и документами.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Результаты и аналитика</h3>
+          <p>
+            Отслеживайте результаты тестирования, успеваемость 
+            и прогресс обучения сотрудников.
+          </p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-robot"></i>
+          </div>
+          <h3>AI Помощник</h3>
+          <p>
+            Встроенный AI-помощник для ответов на вопросы 
+            и помощи в работе с системой.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="landing-how-it-works">
+      <h2>
+        <i class="fas fa-info-circle"></i>
+        Как начать работу
+      </h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Зарегистрируйтесь в системе</h3>
+            <p>
+              Создайте учётную запись как сотрудник или войдите как судья 
+              через специальную страницу входа.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Изучите доступные курсы</h3>
+            <p>
+              Просмотрите каталог курсов и запишитесь на интересные. 
+              Судьи могут создавать собственные курсы и тесты.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Проходите тесты</h3>
+            <p>
+              Выполняйте тесты, назначенные для ваших курсов. 
+              Результаты сохраняются и доступны для просмотра в любое время.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Отслеживайте прогресс</h3>
+            <p>
+              Просматривайте свою транскрипцию с оценками и результатами. 
+              Судьи могут видеть результаты всех сотрудников.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="landing-cta">
+      <h2>
+        <i class="fas fa-rocket"></i>
+        Готовы начать?
+      </h2>
+      <p>Присоединяйтесь к платформе прямо сейчас</p>
+      {% if not request.session.employee_id and not request.session.user_role %}
+        <a href="/register" class="btn">
+          <i class="fas fa-user-plus"></i>
+          Зарегистрироваться
+        </a>
+      {% else %}
+        <a href="/employees" class="btn">
+          <i class="fas fa-arrow-right"></i>
+          Перейти к сотрудникам
+        </a>
+      {% endif %}
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p class="footer-brand">
+          <strong>Судебный законодатель</strong> — Современная судебная платформа
+        </p>
+        <p class="footer-copyright">
+          <small>Разработано с <i class="fas fa-heart"></i> для качественного правосудия</small>
+        </p>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
